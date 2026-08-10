@@ -68,7 +68,7 @@ COPY --from=build /myapp /myapp
 RUN gem install bundler -v 2.5.23
 # Run and own only the runtime files as a non-root user for security
 RUN useradd rails --create-home --shell /bin/bash && \
-  chown -R rails:rails db log storage tmp
+  chown -R rails:rails db log storage tmp /usr/local/bundle
 USER rails:rails
 
 
