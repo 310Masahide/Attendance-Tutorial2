@@ -85,6 +85,7 @@ GEM
     autoprefixer-rails (10.4.21.0)
       execjs (~> 2)
     base64 (0.3.0)
+    bcrypt (3.1.22)
     benchmark (0.5.0)
     bigdecimal (4.1.2)
     bindex (0.8.1)
@@ -163,6 +164,8 @@ GEM
       net-protocol
     nio4r (2.7.5)
     nokogiri (1.17.2-aarch64-linux)
+      racc (~> 1.4)
+    nokogiri (1.17.2-arm64-darwin)
       racc (~> 1.4)
     pp (0.6.4)
       prettyprint
@@ -275,8 +278,10 @@ GEM
 
 PLATFORMS
   aarch64-linux
+  arm64-darwin-25
 
 DEPENDENCIES
+  bcrypt
   bootsnap
   bootstrap-sass
   capybara

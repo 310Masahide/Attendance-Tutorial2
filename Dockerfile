@@ -56,7 +56,7 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-  apt-get install --no-install-recommends -y curl default-mysql-client libvips && \
+  apt-get install --no-install-recommends -y curl default-mysql-client libvips build-essential default-libmysqlclient-dev git pkg-config && \
   rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 
