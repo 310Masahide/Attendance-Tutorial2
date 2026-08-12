@@ -56,6 +56,9 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 
+  # Load DB_HOST/DB_PORT overrides from .env for running Rails outside Docker
+  gem "dotenv-rails"
+
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   # gem "rack-mini-profiler"
 
