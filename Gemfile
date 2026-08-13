@@ -5,6 +5,7 @@ ruby "3.0.6"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.1.0"
 gem 'bcrypt'
+gem 'faker'
 gem 'bootstrap-sass'
 gem 'sassc-rails'
 
@@ -43,6 +44,8 @@ gem "tzinfo-data", platforms: %i[ mswin mswin64 mingw x64_mingw jruby ]
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
+gem 'will_paginate', '~> 3.3' 
+gem 'bootstrap-will_paginate', '1.0.0'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
