@@ -46,6 +46,7 @@ gem "tzinfo-data", platforms: %i[ mswin mswin64 mingw x64_mingw jruby ]
 gem "bootsnap", require: false
 gem 'will_paginate', '~> 3.3' 
 gem 'bootstrap-will_paginate', '1.0.0'
+gem 'rails-i18n'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
