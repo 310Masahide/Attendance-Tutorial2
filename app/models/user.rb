@@ -8,7 +8,10 @@ class User < ApplicationRecord
   VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
   validates :email, presence: true, length: { maximum: 100 },
                     format: { with: VALID_EMAIL_REGEX },
-                    uniqueness: true    
+                    uniqueness: true
+  validates :department, length: { in: 2..30 }, allow_blank: true
+  validates :basic_time, presence: true
+  validates :work_time, presence: true
   has_secure_password
   validates :password, presence: true, length: { minimum: 6 }, allow_nil: true
 
@@ -39,7 +42,7 @@ class User < ApplicationRecord
     # ダイジェストが存在しない場合はfalseを返して終了します。
     return false if remember_digest.nil?
     BCrypt::Password.new(remember_digest).is_password?(remember_token)
-end
+  end
 
   # ユーザーのログイン情報を破棄します。
   def forget

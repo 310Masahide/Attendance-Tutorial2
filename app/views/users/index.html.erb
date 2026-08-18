@@ -7,20 +7,16 @@
     <thead>
       <tr>
         <th><%= User.human_attribute_name :name %></th>
+        <th class="center"><%= User.human_attribute_name :department %></th>
+        <% if current_user.admin? %>
+          <th class="center"><%= User.human_attribute_name :basic_time %></th>
+          <th class="center"><%= User.human_attribute_name :work_time %></th>
+        <% end %>
         <th></th>
       </tr>
     </thead>
 
-    <% @users.each do |user| %>
-      <tr>
-        <td><%= link_to user.name, user %></td>
-        <td>
-          <% if current_user.admin? && !current_user?(user) %>
-            <%= link_to "削除", user, data: { turbo_method: :delete, confirm: "削除してよろしいですか？" }, class: "btn btn-danger" %>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
+    <%= render partial: 'users/user_row', collection: @users, as: :user %>
   </table>
   <%= will_paginate %>
 </div>

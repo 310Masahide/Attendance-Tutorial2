@@ -1,0 +1,20 @@
+<tr id="<%= dom_id(user) %>">
+  <td>
+    <% if current_user.admin? %>
+      <%= link_to user.name, user %>
+    <% else %>
+      <%= user.name %>
+    <% end %>
+  </td>
+  <td class="center"><%= user.department.present? ? user.department : "未所属" %></td>
+  <% if current_user.admin? %>
+    <td class="center"><%= format_basic_info(user.basic_time) %></td>
+    <td class="center"><%= format_basic_info(user.work_time) %></td>
+  <% end %>
+  <td class="center">
+    <% if current_user.admin? && !current_user?(user) %>
+      <%= link_to '基本情報編集', edit_basic_info_user_path(user), data: { turbo_frame: 'modal' }, class: "btn btn-success" %>
+      <%= link_to "削除", user, data: { turbo_method: :delete, confirm: "削除してよろしいですか？" }, class: "btn btn-danger" %>
+    <% end %>
+  </td>
+</tr>
