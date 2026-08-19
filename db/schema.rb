@@ -10,7 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_18_113713) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_19_080624) do
+  create_table "attendances", charset: "utf8mb4", force: :cascade do |t|
+    t.date "worked_on"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.string "note"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_attendances_on_user_id"
+  end
+
   create_table "users", charset: "utf8mb4", force: :cascade do |t|
     t.string "name"
     t.string "email"
@@ -20,9 +31,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_113713) do
     t.string "remember_digest"
     t.boolean "admin", default: false
     t.string "department"
-    t.datetime "basic_time", default: "2026-08-17 23:00:00"
-    t.datetime "work_time", default: "2026-08-17 22:30:00"
+    t.datetime "basic_time", precision: nil, default: "2026-08-18 23:00:00"
+    t.datetime "work_time", precision: nil, default: "2026-08-18 22:30:00"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "attendances", "users"
 end
