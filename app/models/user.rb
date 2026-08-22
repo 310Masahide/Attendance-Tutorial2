@@ -3,6 +3,8 @@ class User < ApplicationRecord
   # 「remember_token」という仮想の属性を作成します。
   attr_accessor :remember_token
   before_save { self.email = email.downcase }
+  # basic_time/work_timeは時刻のみが意味を持つため、生成日時をマイグレーション実行日に固定せず常に当日の日付で設定します。
+  after_initialize :set_default_times, if: :new_record?
 
   validates :name,  presence: true, length: { maximum: 50 }
 
@@ -48,5 +50,13 @@ class User < ApplicationRecord
   # ユーザーのログイン情報を破棄します。
   def forget
     update_attribute(:remember_digest, nil)
+  end
+
+  private
+
+  # basic_time/work_timeのデフォルト値を当日の日付で設定します。
+  def set_default_times
+    self.basic_time = Time.zone.now.change(hour: 8, min: 0, sec: 0)
+    self.work_time = Time.zone.now.change(hour: 7, min: 30, sec: 0)
   end
 end
