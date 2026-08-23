@@ -60,7 +60,7 @@ class UsersController < ApplicationController
         if @user.update(user_params)
           flash[:success] = "ユーザー情報を更新しました。"
           format.html { redirect_to @user }
-          format.json { render.json: @user, status: :ok }
+          format.json { render json: @user, status: :ok }
         else
           format.html { render :edit }
           format.json { render json: @user.errors, status: :unprocessable_entity }     

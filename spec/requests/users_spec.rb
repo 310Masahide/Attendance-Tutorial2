@@ -113,8 +113,8 @@ RSpec.describe "Users", type: :request do
       json_response = JSON.parse(response.body)
       expected_data = {
         'admin' => false,
-        'basic_time' => "2023-12-31T08:00:00.000+09:00", # データベースのデフォルト値に更新
-        'work_time' => "2023-12-31T07:30:00.000+09:00", # データベースのデフォルト値に更新
+        'basic_time' => Time.zone.now.change(hour: 8, min: 0, sec: 0).as_json,
+        'work_time' => Time.zone.now.change(hour: 7, min: 30, sec: 0).as_json,
         'created_at' => nil,
         'department' => nil,
         'email' => nil,
@@ -144,8 +144,8 @@ RSpec.describe "Users", type: :request do
       it 'ユーザーが生成される' do
         expect(json_response).to include({
           'admin' => false,
-          'basic_time' => "2023-12-31T08:00:00.000+09:00",
-          'work_time' => "2023-12-31T07:30:00.000+09:00",
+          'basic_time' => Time.zone.now.change(hour: 8, min: 0, sec: 0).as_json,
+          'work_time' => Time.zone.now.change(hour: 7, min: 30, sec: 0).as_json,
           'department' => nil,
           'email' => 'test@example.com',
           'name' => 'Test User'
