@@ -17,7 +17,10 @@ class UsersController < ApplicationController
 
 
   def show
+    @pending_overtime_requests_count = current_user.supervisor? ? current_user.received_overtime_requests.pending.count : 0
     @worked_sum = @attendances.where.not(started_at: nil).count
+    @unconfirmed_results_count = current_user.overtime_requests.unconfirmed_results.count
+    @overtime_requests_by_date = @user.overtime_requests.includes(:approver).index_by(&:worked_on)
     respond_to do |format|
      format.html
      format.json { render json: @user }

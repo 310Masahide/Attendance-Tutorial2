@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_19_080624) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_28_112614) do
   create_table "attendances", charset: "utf8mb4", force: :cascade do |t|
     t.date "worked_on"
     t.datetime "started_at"
@@ -20,6 +20,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_080624) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_attendances_on_user_id"
+  end
+
+  create_table "overtime_requests", charset: "utf8mb4", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.date "worked_on"
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "finished_hour"
+    t.integer "finished_minute"
+    t.boolean "next_day"
+    t.string "content"
+    t.bigint "approver_id"
+    t.integer "status", default: 0, null: false
+    t.boolean "applicant_confirmed", default: false, null: false
+    t.index ["approver_id"], name: "index_overtime_requests_on_approver_id"
+    t.index ["user_id"], name: "index_overtime_requests_on_user_id"
   end
 
   create_table "users", charset: "utf8mb4", force: :cascade do |t|
@@ -33,8 +50,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_080624) do
     t.string "department"
     t.datetime "basic_time", precision: nil, default: "2026-08-18 23:00:00"
     t.datetime "work_time", precision: nil, default: "2026-08-18 22:30:00"
+    t.boolean "supervisor", default: false
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
   add_foreign_key "attendances", "users"
+  add_foreign_key "overtime_requests", "users"
+  add_foreign_key "overtime_requests", "users", column: "approver_id"
 end

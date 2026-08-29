@@ -105,3 +105,56 @@ p {
   transform: translate(-50%, -50%); /* ウィンドウを中央に移動 */
   z-index: 1050; /* 必要に応じてz-indexを調整して前面に表示 */
 }
+
+/* 残業申請：終了予定時間のプルダウンを一行表示 */
+.time-select {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+
+  select.form-control {
+    display: inline-block;
+    width: auto;
+    margin: 0 4px;
+  }
+}
+
+.modal-body .btn-block {
+  margin-top: 12px;
+}
+
+/* 残業申請のお知らせ */
+.overtime-notice {
+  margin: 10px 0;
+}
+
+.btn-plain {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #000;
+  font-weight: normal;
+  font-size: 1.2em;
+  text-decoration: none;
+
+  &:hover {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  &.has-notice {
+    color: #d9534f; /* Bootstrap 3 の danger 相当の赤 */
+  }
+}
+
+.notice-count {
+  color: #d9534f;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-left: 8px;
+}
+
+/* 残業申請のお知らせモーダル：ヘッダーを一行表示 */
+.notice-table th {
+  white-space: nowrap;
+}

@@ -1,0 +1,50 @@
+<% if requests_by_applicant.present? %>
+  <%= form_with url: bulk_update_received_overtime_requests_user_path(@user),
+                method: :patch, local: false,
+                data: { action: "submit->overtime-request#submit" } do %>
+    <% requests_by_applicant.each do |applicant, requests| %>
+      <h1 class="modal-title">【<%= applicant.name %>からの残業申請】</h1>
+      <table class="table table-bordered notice-table">
+        <thead>
+          <tr>
+            <th>日付</th><th>曜日</th><th>終了予定時間</th>
+            <th>指定勤務終了時間</th><th>時間外時間</th>
+            <th class="text-center">業務処理内容</th><th>指示者確認印</th>
+            <th>変更</th><th>勤怠を確認する</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% requests.each do |req| %>
+            <tr>
+              <td><%= l(req.worked_on, format: :short) %></td>
+              <td><%= $days_of_the_week[req.worked_on.wday] %></td>
+              <td><%= format("%02d:%02d", req.finished_hour, req.finished_minute) %></td>
+              <td><%= applicant.work_time.strftime("%H.%M") %></td>
+              <td><%= format("%.2f", req.overtime_hours) %></td>
+              <td><%= req.content %></td>
+              <td>
+                <%= select_tag "overtime_requests[#{req.id}][status]",
+                      options_for_select(
+                        [["なし","unset"],["申請中","pending"],["承認","approved"],["否認","rejected"]],
+                        req.status),
+                      class: "form-control" %>
+              </td>
+              <td>
+                <%= check_box_tag "overtime_requests[#{req.id}][apply]", "1" %>
+              </td>
+              <td>
+                <%= link_to "確認",
+                      attendances_edit_one_month_user_path(applicant, date: req.worked_on.beginning_of_month),
+                      data: { turbo_frame: "_top" },
+                      class: "btn btn-primary btn-block" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+    <div class="center">
+      <%= submit_tag "変更を送信する", class: "btn btn-primary btn-block" %>
+    </div>
+  <% end %>
+<% end %>

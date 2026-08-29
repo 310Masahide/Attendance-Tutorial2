@@ -37,6 +37,7 @@ RSpec.describe "Users", type: :request do
             'password_digest' => user.password_digest,
             'remember_digest' => user.remember_digest,
             'admin' => user.admin,
+            'supervisor' => user.supervisor,
             'department' => user.department,
             'basic_time' => user.basic_time.as_json,
             'work_time' => user.work_time.as_json
@@ -89,6 +90,7 @@ RSpec.describe "Users", type: :request do
             'password_digest' => user.password_digest,
             'remember_digest' => user.remember_digest,
             'admin' => user.admin,
+            'supervisor' => user.supervisor,
             'department' => user.department,
             'basic_time' => user.basic_time.as_json,
             'work_time' => user.work_time.as_json
@@ -113,6 +115,7 @@ RSpec.describe "Users", type: :request do
       json_response = JSON.parse(response.body)
       expected_data = {
         'admin' => false,
+        'supervisor' => false,
         'basic_time' => Time.zone.now.change(hour: 8, min: 0, sec: 0).as_json,
         'work_time' => Time.zone.now.change(hour: 7, min: 30, sec: 0).as_json,
         'created_at' => nil,

@@ -15,6 +15,27 @@
     </tr>
   </table>
 </div>
+<% unless current_user.admin? || current_user.supervisor? %>
+    <div class="overtime-notice">
+      <%= link_to "【残業申請の結果】", overtime_results_user_path(@user),
+            data: { turbo_frame: 'modal' },
+            class: "btn-plain#{' has-notice' if @unconfirmed_results_count.positive?}" %>
+      <% if @unconfirmed_results_count.positive? %>
+        <span class="notice-count"><%= @unconfirmed_results_count %>件の通知があります</span>
+      <% end %>
+    </div>
+  <% end %>
+
+<% if current_user.supervisor? %>
+  <div class="overtime-notice">
+    <%= link_to "【残業申請のお知らせ】", received_overtime_requests_user_path(@user),
+          data: { turbo_frame: 'modal' },
+          class: "btn-plain#{' has-notice' if @pending_overtime_requests_count.positive?}" %>
+    <% if @pending_overtime_requests_count.positive? %>
+      <span class="notice-count"><%= @pending_overtime_requests_count %>件の通知があります</span>
+    <% end %>
+  </div>
+<% end %>
 <div class="btn-users-show">
   <%= link_to "⇦ 前月へ", user_path(date: @first_day.prev_month), class: "btn btn-info" %>
   <%= link_to "1ヶ月の勤怠編集へ", attendances_edit_one_month_user_path(date: @first_day), class: "btn btn-success" %>
@@ -24,6 +45,7 @@
   <table class="table table-bordered table-condensed table-hover" id="table-attendances">
     <thead>
       <tr>
+        <th>残業申請</th>
         <th>日付</th>
         <th>曜日</th>
         <th>勤怠登録</th>
@@ -36,6 +58,17 @@
     <tbody>
       <% @attendances.each do |day| %>
         <tr>
+          <% unless current_user.admin? %>
+            <td>
+              <% if request = @overtime_requests_by_date[day.worked_on] %>
+                <%= request.approver.name %>：<%= request.status_label %>
+              <% else %>
+                <%= link_to "残業申請", new_overtime_request_path(@user, worked_on: day.worked_on),
+                      data: { turbo_frame: 'modal' }, class: "btn btn-primary btn-sm" %>
+              <% end %>
+            </td>
+          <% end %>
+
           <td><%= l(day.worked_on, format: :short) %></td>
           <td><%= $days_of_the_week[day.worked_on.wday] %></td>
           <td>

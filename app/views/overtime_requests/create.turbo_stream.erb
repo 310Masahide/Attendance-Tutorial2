@@ -1,0 +1,8 @@
+<% if @overtime_request.errors.any? %>
+  <%= turbo_stream.replace 'modal' do %>
+    <%= render 'overtime_requests/form', overtime_request: @overtime_request %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.update 'modal', '' %>
+<% end %>
+<%= turbo_stream.update 'flash', partial: 'shared/flash_messages' %>

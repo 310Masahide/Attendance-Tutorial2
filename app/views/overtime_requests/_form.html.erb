@@ -1,0 +1,54 @@
+<%# app/views/overtime_requests/_form.html.erb %>
+<%= turbo_frame_tag 'modal' do %>
+  <div data-controller="overtime-request">
+    <div class="modal-backdrop" data-action="click->overtime-request#close"></div>
+    <div class="modal-dialog modal-lg modal-dialog-center">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-action="overtime-request#close">×</button>
+          <h1 class="modal-title">【残業申請】</h1>
+        </div>
+        <div class="modal-body">
+          <%= render 'shared/error_messages', object: @overtime_request %>
+          <%= form_with(model: @overtime_request,
+                        url: overtime_requests_path(@user),
+                        local: false,
+                        data: { action: "submit->overtime-request#submit" }) do |f| %>
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>日付</th><th>曜日</th><th>終了予定時間</th>
+                  <th>翌日</th><th>業務処理内容</th><th>指示者確認印</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><%= l(@overtime_request.worked_on, format: :short) %></td>
+                  <td><%= $days_of_the_week[@overtime_request.worked_on.wday] %></td>
+                  <td>
+                    <%= f.hidden_field :worked_on %>
+                    <span class="time-select">
+                      <%= f.select :finished_hour, (0..23).to_a, {}, class: "form-control input-sm" %>
+                      :
+                      <%= f.select :finished_minute, (0..59).to_a, {}, class: "form-control input-sm" %>
+                    </span>
+                  </td>
+                  <td><%= f.check_box :next_day %></td>
+                  <td><%= f.text_field :content, class: "form-control" %></td>
+                  <td>
+                    <%= f.collection_select :approver_id, 
+                          User.where(supervisor: true).where.not(id: current_user.id),
+                          :id, :name, {}, class: "form-control" %>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="center">
+              <%= f.submit "変更を送信する", class: "btn btn-primary btn-block" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

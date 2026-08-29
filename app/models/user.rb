@@ -1,5 +1,8 @@
 class User < ApplicationRecord
   has_many :attendances, dependent: :destroy
+  has_many :overtime_requests, dependent: :destroy
+  has_many :received_overtime_requests, class_name: "OvertimeRequest", foreign_key: :approver_id, dependent: :destroy
+
   # 「remember_token」という仮想の属性を作成します。
   attr_accessor :remember_token
   before_save { self.email = email.downcase }

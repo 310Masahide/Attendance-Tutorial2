@@ -1,0 +1,15 @@
+<%= turbo_frame_tag 'modal' do %>
+  <div data-controller="overtime-request">
+    <div class="modal-backdrop" data-action="click->overtime-request#close"></div>
+    <div class="modal-dialog modal-lg modal-dialog-center">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-action="overtime-request#close">×</button>
+        </div>
+        <div class="modal-body">
+          <%= render 'received_overtime_requests/pending_section', requests_by_applicant: @requests_by_applicant %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
