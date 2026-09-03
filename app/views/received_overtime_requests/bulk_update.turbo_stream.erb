@@ -1,21 +1,9 @@
 <%= turbo_stream.replace 'modal' do %>
-  <%= turbo_frame_tag 'modal' do %>
-    <div data-controller="overtime-request">
-      <div class="modal-backdrop" data-action="click->overtime-request#close"></div>
-      <div class="modal-dialog modal-lg modal-dialog-center">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-action="overtime-request#close">×</button>
-          </div>
-          <div class="modal-body">
-            <% if @results.present? %>
-              <%= render 'overtime_requests/result_table', requests: @results %>
-            <% end %>
-            <%= render 'received_overtime_requests/pending_section', requests_by_applicant: @requests_by_applicant %>
-          </div>
-        </div>
-      </div>
-    </div>
+  <%= render layout: 'shared/modal', locals: { title: '【残業申請のお知らせ】' } do %>
+    <% if @decided_requests.present? %>
+      <%= render 'overtime_requests/result_table', overtime_requests: @decided_requests %>
+    <% end %>
+    <%= render 'received_overtime_requests/pending_section', requests_by_applicant: @requests_by_applicant, supervisor: @supervisor %>
   <% end %>
 <% end %>
 <%= turbo_stream.update 'flash', partial: 'shared/flash_messages' %>

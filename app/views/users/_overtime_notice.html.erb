@@ -1,0 +1,8 @@
+<div class="overtime-notice">
+  <%= link_to notice[:label], notice[:path],
+        data: { turbo_frame: 'modal' },
+        class: "btn-plain#{' has-notice' if notice[:count].positive?}" %>
+  <% if notice[:count].positive? %>
+    <span class="notice-count"><%= notice[:count] %>件の通知があります</span>
+  <% end %>
+</div>

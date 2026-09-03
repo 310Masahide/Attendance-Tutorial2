@@ -1,0 +1,34 @@
+.modal-backdrop {
+  opacity: .5;
+}
+
+.modal-dialog-center {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+
+  max-height: 90vh;          // 画面からはみ出させない
+  display: flex;
+  flex-direction: column;
+
+  .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+  }
+
+  .modal-header,
+  .modal-footer { flex: 0 0 auto; }   // ヘッダーと送信ボタンは常に見える位置に固定
+
+  .modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;                 // 一覧だけがスクロールする
+  }
+}
+
+.modal-body .btn-block {
+  margin-top: 12px;
+}

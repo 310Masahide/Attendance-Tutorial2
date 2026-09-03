@@ -3,9 +3,7 @@
 one:
   user: one
   worked_on: 2026-08-25
-  reason: MyString
 
 two:
   user: two
   worked_on: 2026-08-25
-  reason: MyString

@@ -1,11 +1,11 @@
-<% if @user.errors.any? %>
+<% if object.errors.any? %>
   <div id="error_explanation">
     <div class="alert alert-danger">
-      入力エラー<%= @user.errors.count %>件ありました。
+      入力エラー<%= object.errors.count %>件ありました。
     </div>
     <ul>
-    <% @user.errors.full_messages.each do |msg| %>
-      <li><%= msg %></li>
+    <% object.errors.full_messages.each do |error_message| %>
+      <li><%= error_message %></li>
     <% end %>
     </ul>
   </div>

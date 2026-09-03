@@ -1,8 +1,9 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [:show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
-  before_action :logged_in_user, only: [:index, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
+  before_action :logged_in_user, only: [:index, :show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
   before_action :correct_user, only: [:edit, :update]
   before_action :admin_user, only: [:destroy, :edit_basic_info, :update_basic_info]
+  before_action :viewable_user, only: :show
   before_action :set_one_month, only: :show
 
 
@@ -17,13 +18,13 @@ class UsersController < ApplicationController
 
 
   def show
-    @pending_overtime_requests_count = current_user.supervisor? ? current_user.received_overtime_requests.pending.count : 0
     @worked_sum = @attendances.where.not(started_at: nil).count
-    @unconfirmed_results_count = current_user.overtime_requests.unconfirmed_results.count
     @overtime_requests_by_date = @user.overtime_requests.includes(:approver).index_by(&:worked_on)
+    @unconfirmed_results_count = current_user.overtime_requests.unconfirmed_results.count
+    @pending_overtime_requests_count = current_user.supervisor? ? current_user.received_overtime_requests.pending.count : 0
     respond_to do |format|
-     format.html
-     format.json { render json: @user }
+      format.html
+      format.json { render json: @user }
     end
   end
 
@@ -109,6 +110,14 @@ class UsersController < ApplicationController
   end
 
   private
+
+  def viewable_user
+    return if current_user?(@user) || current_user.admin?
+    return if current_user.received_overtime_requests.exists?(user_id: @user.id)
+
+    flash[:danger] = "閲覧権限がありません。"
+    redirect_to(root_url)
+  end
 
   def user_params
     params.require(:user).permit(:name, :email, :department, :password, :password_confirmation)

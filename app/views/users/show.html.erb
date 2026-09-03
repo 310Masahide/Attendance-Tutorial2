@@ -15,37 +15,30 @@
     </tr>
   </table>
 </div>
-<% unless current_user.admin? || current_user.supervisor? %>
-    <div class="overtime-notice">
-      <%= link_to "【残業申請の結果】", overtime_results_user_path(@user),
-            data: { turbo_frame: 'modal' },
-            class: "btn-plain#{' has-notice' if @unconfirmed_results_count.positive?}" %>
-      <% if @unconfirmed_results_count.positive? %>
-        <span class="notice-count"><%= @unconfirmed_results_count %>件の通知があります</span>
-      <% end %>
-    </div>
-  <% end %>
+<% overtime_notices_for(current_user).each do |notice| %>
+  <%= render 'users/overtime_notice', notice: notice %>
+<% end %>
 
-<% if current_user.supervisor? %>
-  <div class="overtime-notice">
-    <%= link_to "【残業申請のお知らせ】", received_overtime_requests_user_path(@user),
-          data: { turbo_frame: 'modal' },
-          class: "btn-plain#{' has-notice' if @pending_overtime_requests_count.positive?}" %>
-    <% if @pending_overtime_requests_count.positive? %>
-      <span class="notice-count"><%= @pending_overtime_requests_count %>件の通知があります</span>
-    <% end %>
+<% readonly = params[:readonly].present? %>
+
+<% unless readonly %>
+  <div class="btn-users-show">
+    <%= link_to "⇦ 前月へ", user_path(date: @first_day.prev_month), class: "btn btn-info" %>
+    <%= link_to "1ヶ月の勤怠編集へ", attendances_edit_one_month_user_path(date: @first_day), class: "btn btn-success" %>
+    <%= link_to "次月へ ⇨", user_path(date: @first_day.next_month), class: "btn btn-info" %>
   </div>
 <% end %>
-<div class="btn-users-show">
-  <%= link_to "⇦ 前月へ", user_path(date: @first_day.prev_month), class: "btn btn-info" %>
-  <%= link_to "1ヶ月の勤怠編集へ", attendances_edit_one_month_user_path(date: @first_day), class: "btn btn-success" %>
-  <%= link_to "次月へ ⇨", user_path(date: @first_day.next_month), class: "btn btn-info" %>
-</div>
+
 <div>
   <table class="table table-bordered table-condensed table-hover" id="table-attendances">
+
+    <% shows_overtime_request_column = !current_user.admin? && !readonly %>
+    
     <thead>
       <tr>
-        <th>残業申請</th>
+        <% if shows_overtime_request_column %>
+          <th class="col-overtime-request">残業申請</th>
+        <% end %>
         <th>日付</th>
         <th>曜日</th>
         <th>勤怠登録</th>
@@ -56,35 +49,29 @@
       </tr>
     </thead>
     <tbody>
-      <% @attendances.each do |day| %>
+      <% @attendances.each do |attendance| %>
         <tr>
-          <% unless current_user.admin? %>
-            <td>
-              <% if request = @overtime_requests_by_date[day.worked_on] %>
-                <%= request.approver.name %>：<%= request.status_label %>
-              <% else %>
-                <%= link_to "残業申請", new_overtime_request_path(@user, worked_on: day.worked_on),
-                      data: { turbo_frame: 'modal' }, class: "btn btn-primary btn-sm" %>
-              <% end %>
-            </td>
+          <% if shows_overtime_request_column %>
+            <%= render 'users/overtime_request_cell',
+                  worked_on: attendance.worked_on,
+                  overtime_request: @overtime_requests_by_date[attendance.worked_on] %>
           <% end %>
-
-          <td><%= l(day.worked_on, format: :short) %></td>
-          <td><%= $days_of_the_week[day.worked_on.wday] %></td>
+          <td><%= l(attendance.worked_on, format: :short) %></td>
+          <td><%= $days_of_the_week[attendance.worked_on.wday] %></td>
           <td>
-            <% if btn_text = attendance_state(day) %>
-              <%= link_to "#{btn_text}登録", user_attendance_path(@user, day), data: { turbo_method: :patch }, class: "btn btn-primary btn-attendance" %>
+            <% if btn_text = attendance_state(attendance) %>
+              <%= link_to "#{btn_text}登録", user_attendance_path(@user, attendance), data: { turbo_method: :patch }, class: "btn btn-primary btn-attendance" %>
             <% end %>
           </td>
-          <td><%= l(day.started_at, format: :time) if day.started_at.present? %></td>
-          <td><%= l(day.finished_at, format: :time) if day.finished_at.present? %></td>
+          <td><%= l(attendance.started_at, format: :time) if attendance.started_at.present? %></td>
+          <td><%= l(attendance.finished_at, format: :time) if attendance.finished_at.present? %></td>
           <td>
-            <% if day.started_at.present? && day.finished_at.present? %>
-              <%= str_times = working_times(day.started_at, day.finished_at) %>
+            <% if attendance.started_at.present? && attendance.finished_at.present? %>
+              <%= str_times = working_times(attendance.started_at, attendance.finished_at) %>
               <% @total_working_times = @total_working_times.to_f + str_times.to_f %>
             <% end %>
           </td>
-          <td><%= day.note %></td>
+          <td><%= attendance.note %></td>
         </tr>
       <% end %>
     </tbody>

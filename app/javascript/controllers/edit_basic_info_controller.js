@@ -1,23 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
-
 export default class extends Controller {
-  // フォームが送信されたときに呼ばれるメソッド
-  submit(event) {
-    // フラッシュメッセージ領域をクリアする
-    const flashContainer = document.getElementById('flash');
-    if (flashContainer) {
-      flashContainer.innerHTML = '';
-      flashContainer.className = '';
-    }
-
-    // フォーム送信後の処理（例: モーダルを閉じる）
-    this.close();
+  // NOTE: 送信結果を待たずに閉じる。失敗時は update_basic_info.turbo_stream.erb が modal を再描画する
+  submit() {
+    this.close()
   }
 
-
-  // モーダルを閉じるメソッド
   close() {
-    this.element.remove(); // モーダルの要素を削除
+    this.element.remove()
   }
 }

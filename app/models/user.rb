@@ -62,4 +62,6 @@ class User < ApplicationRecord
     self.basic_time = Time.zone.now.change(hour: 8, min: 0, sec: 0)
     self.work_time = Time.zone.now.change(hour: 7, min: 30, sec: 0)
   end
+
+  scope :supervisors, -> { where(supervisor: true) }
 end

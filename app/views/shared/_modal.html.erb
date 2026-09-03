@@ -5,10 +5,18 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-action="overtime-request#close">×</button>
+          <% if defined?(title) && title.present? %>
+            <h1 class="modal-title"><%= title %></h1>
+          <% end %>
         </div>
         <div class="modal-body">
-          <%= render 'received_overtime_requests/pending_section', requests_by_applicant: @requests_by_applicant %>
+          <%= yield %>
         </div>
+        <% if content_for?(:modal_footer) %>
+          <div class="modal-footer">
+            <%= yield :modal_footer %>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>

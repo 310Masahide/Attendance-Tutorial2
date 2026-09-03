@@ -1,4 +1,4 @@
-class AddFieldsToOvertimeRequests < ActiveRecord::Migration[7.1]
+class AddScheduleAndApproverToOvertimeRequests < ActiveRecord::Migration[7.1]
   def change
     add_column :overtime_requests, :finished_hour, :integer
     add_column :overtime_requests, :finished_minute, :integer

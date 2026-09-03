@@ -1,1 +1,4 @@
-<%= render 'list' %>
+<%= render layout: 'shared/modal', locals: { title: '【残業申請のお知らせ】' } do %>
+  <%= render 'received_overtime_requests/pending_section',
+             requests_by_applicant: @requests_by_applicant, supervisor: @supervisor %>
+<% end %>

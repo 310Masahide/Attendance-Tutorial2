@@ -84,3 +84,6 @@ group :test do
   gem 'database_cleaner'
   gem 'rails-controller-testing'
 end
+
+gem "rubocop", "~> 1.90", :group => :development
+gem "rubocop-rails", "~> 2.37", :group => :development

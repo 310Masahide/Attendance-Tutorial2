@@ -2,38 +2,59 @@ class OvertimeRequest < ApplicationRecord
   belongs_to :user
   belongs_to :approver, class_name: "User"
 
-  enum status: { pending: 0, approved: 1, rejected: 2, unset: 3 }
+  enum status: { unset: 0, pending: 1, approved: 2, rejected: 3 }
+
+  scope :unconfirmed_results, -> { where(status: [:approved, :rejected], applicant_confirmed: false) }
+  scope :awaiting_decision,   -> { where(status: [:pending, :unset]) }
 
   validates :worked_on, presence: true
   validates :finished_hour, presence: true, inclusion: { in: 0..23 }
   validates :finished_minute, presence: true, inclusion: { in: 0..59 }
   validates :content, presence: true
+  validates :worked_on, uniqueness: { scope: :user_id}
+  validate :approver_must_be_another_supervisor
 
-  # 「翌日」チェック込みの実際の終了予定日時が必要な場合はここで計算
-  def finished_on
-    next_day? ? worked_on + 1.day : worked_on
+  def scheduled_finish_time
+    attendance = user.attendances.find_by(worked_on: worked_on)
+    started_at = attendance&.started_at or return nil
+
+    started_at + user.work_time.hour.hours + user.work_time.min.minutes
+  end
+
+  def overtime_minutes
+    scheduled_finish = scheduled_finish_time or return 0
+
+    scheduled_finish_minutes = scheduled_finish.hour * 60 + scheduled_finish.min
+    planned_finish_minutes   = finished_hour * 60 + finished_minute + (finishes_next_day? ? 24 * 60 : 0)
+
+    [planned_finish_minutes - scheduled_finish_minutes, 0].max
   end
 
   def overtime_hours
-    standard_minutes = user.work_time.hour * 60 + user.work_time.min
-    finished_minutes = finished_hour * 60 + finished_minute + (next_day? ? 24 * 60 : 0)
-    ((finished_minutes - standard_minutes) / 60.0).round(2)
-  end
-
-  def result_label
-    return "残業承認済" if approved?
-    return "残業否認" if rejected?
+    (overtime_minutes / 60.0).round(2)
   end
 
   def status_label
-    case status
-    when "pending"  then "残業申請中"
-    when "approved" then "残業承認済"
-    when "rejected" then "残業否認"
-    when "unset"    then "未定"
-    end
+    I18n.t("activerecord.attributes.overtime_request.statuses.#{status}")
   end
 
-  scope :unconfirmed_results, -> { where(status: [:approved, :rejected], applicant_confirmed: false) }
+  def decided?
+    approved? || rejected?
+  end
 
+  # 申請中・却下された申請は、申請者本人が編集(再申請)できる
+  def editable?
+    pending? || rejected?
+  end
+
+  def self.status_options
+    statuses.keys.map { |status_name| [I18n.t("activerecord.attributes.overtime_request.statuses.#{status_name}"), status_name] }
+  end
+
+  def approver_must_be_another_supervisor
+    return if approver.nil?
+
+    errors.add(:approver, "は上長を指定してください") unless approver.supervisor?
+    errors.add(:approver_id, "には自分自身を指定できません") if approver_id.present? && approver_id == user_id
+  end
 end

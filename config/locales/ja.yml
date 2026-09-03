@@ -1,11 +1,18 @@
 ja:
   activerecord:
-    errors:
-      messages:
-        record_invalid: "バリデーションに失敗しました: %{errors}"
-        restrict_dependent_destroy:
-          has_one: "%{record}が存在しているので削除できません"
-          has_many: "%{record}が存在しているので削除できません"
+    attributes:
+      overtime_request:
+        worked_on: "日付"
+        finished_hour: "終了予定時間（時）"
+        finished_minute: "終了予定時間（分）"
+        content: "業務処理内容"
+        approver: "指示者"
+        approver_id: "指示者"
+        statuses:
+          unset: "未定"
+          pending: "残業申請中"
+          approved: "残業承認済"
+          rejected: "残業否認"
   date:
     abbr_day_names:
       - 日

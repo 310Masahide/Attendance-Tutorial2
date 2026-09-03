@@ -2,21 +2,25 @@
   <thead>
     <tr><th colspan="7" class="text-center">所定外勤務</th></tr>
     <tr>
-      <th>日付</th><th>曜日</th><th>終了予定時間</th>
-      <th>指定勤務終了時間</th><th>時間外時間</th>
-      <th>業務処理内容</th><th>指示者確認印</th>
+      <th>日付</th>
+      <th>曜日</th>
+      <th>終了予定時間</th>
+      <th>指定勤務終了時間</th>
+      <th>時間外時間</th>
+      <th>業務処理内容</th>
+      <th>指示者確認印</th>
     </tr>
   </thead>
   <tbody>
-    <% requests.each do |req| %>
+    <% overtime_requests.each do |overtime_request| %>
       <tr>
-        <td><%= l(req.worked_on, format: :short) %></td>
-        <td><%= $days_of_the_week[req.worked_on.wday] %></td>
-        <td><%= format("%02d:%02d", req.finished_hour, req.finished_minute) %></td>
-        <td><%= req.user.work_time.strftime("%H.%M") %></td>
-        <td><%= format("%.2f", req.overtime_hours) %></td>
-        <td><%= req.content %></td>
-        <td><%= req.result_label %></td>
+        <td><%= l(overtime_request.worked_on, format: :short) %></td>
+        <td><%= $days_of_the_week[overtime_request.worked_on.wday] %></td>
+        <td><%= format("%02d:%02d", overtime_request.finished_hour, overtime_request.finished_minute) %></td>
+        <td><%= overtime_request.scheduled_finish_time&.strftime("%H.%M") %></td>
+        <td><%= format("%.2f", overtime_request.overtime_hours) %></td>
+        <td><%= overtime_request.content %></td>
+        <td><%= overtime_request.status_label %></td>
       </tr>
     <% end %>
   </tbody>

@@ -1,0 +1,54 @@
+$notice-danger-color: #d9534f; // Bootstrap 3 の danger 相当
+
+.col-overtime-request {
+  width: 140px;
+}
+
+/* 残業申請：終了予定時間のプルダウンを一行表示 */
+.time-select {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+
+  select.form-control {
+    display: inline-block;
+    width: auto;
+    margin: 0 4px;
+  }
+}
+
+/* 残業申請のお知らせ */
+.overtime-notice {
+  margin: 10px 0;
+}
+
+.btn-plain {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #000;
+  font-weight: normal;
+  font-size: 1.2em;
+  text-decoration: none;
+
+  &:hover {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  &.has-notice {
+    color: $notice-danger-color;
+  }
+}
+
+.notice-count {
+  color: $notice-danger-color;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-left: 8px;
+}
+
+/* 残業申請のお知らせモーダル：ヘッダーを一行表示 */
+.notice-table th {
+  white-space: nowrap;
+}

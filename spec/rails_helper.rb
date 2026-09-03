@@ -44,6 +44,13 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  # test/fixtures (Minitest) と本スイートは同じテストDBを共有しており、
+  # bin/rails test を先に実行するとfixtureのレコードが残存したままになる。
+  # スイート開始前に一度だけ掃除しておくことで、実行順に依存しないようにする。
+  config.before(:suite) do
+    User.destroy_all
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 

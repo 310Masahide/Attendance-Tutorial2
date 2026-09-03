@@ -1,0 +1,14 @@
+<td id="overtime_cell_<%= worked_on.strftime('%Y%m%d') %>">
+  <% if overtime_request %>
+    <% if overtime_request.editable? %>
+      <%= link_to "#{overtime_request.approver.name}：#{overtime_request.status_label}",
+            edit_user_overtime_request_path(@user, overtime_request),
+            data: { turbo_frame: 'modal' } %>
+    <% else %>
+      <%= overtime_request.approver.name %>：<%= overtime_request.status_label %>
+    <% end %>
+  <% else %>
+    <%= link_to "残業申請", new_user_overtime_request_path(@user, worked_on: worked_on),
+          data: { turbo_frame: 'modal' }, class: "btn btn-primary btn-sm" %>
+  <% end %>
+</td>

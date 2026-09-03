@@ -1,0 +1,7 @@
+<%= turbo_stream.update 'modal', '' %>
+<% if @overtime_request.destroyed? %>
+  <%= turbo_stream.replace "overtime_cell_#{@overtime_request.worked_on.strftime('%Y%m%d')}" do %>
+    <%= render 'users/overtime_request_cell', worked_on: @overtime_request.worked_on, overtime_request: nil %>
+  <% end %>
+<% end %>
+<%= turbo_stream.update 'flash', partial: 'shared/flash_messages' %>

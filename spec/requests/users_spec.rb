@@ -68,8 +68,9 @@ RSpec.describe "Users", type: :request do
   
   describe 'GET show' do
     let(:user) { create(:user) }
-  
+
     before do
+      post login_path, params: { session: { email: user.email, password: user.password } }
       get user_path(user), as: :json
     end
   
