@@ -15,16 +15,11 @@ class OvertimeRequest < ApplicationRecord
   validate :approver_must_be_another_supervisor
 
   def scheduled_finish_time
-    attendance = user.attendances.find_by(worked_on: worked_on)
-    started_at = attendance&.started_at or return nil
-
-    started_at + user.work_time.hour.hours + user.work_time.min.minutes
+    user.designated_work_end_time
   end
 
   def overtime_minutes
-    scheduled_finish = scheduled_finish_time or return 0
-
-    scheduled_finish_minutes = scheduled_finish.hour * 60 + scheduled_finish.min
+    scheduled_finish_minutes = scheduled_finish_time.hour * 60 + scheduled_finish_time.min
     planned_finish_minutes   = finished_hour * 60 + finished_minute + (finishes_next_day? ? 24 * 60 : 0)
 
     [planned_finish_minutes - scheduled_finish_minutes, 0].max

@@ -40,7 +40,9 @@ RSpec.describe "Users", type: :request do
             'supervisor' => user.supervisor,
             'department' => user.department,
             'basic_time' => user.basic_time.as_json,
-            'work_time' => user.work_time.as_json
+            'work_time' => user.work_time.as_json,
+            'designated_work_start_time' => user.designated_work_start_time.as_json,
+            'designated_work_end_time' => user.designated_work_end_time.as_json
           }
         end
         expect(json_response).to match_array(expected_users)
@@ -94,7 +96,9 @@ RSpec.describe "Users", type: :request do
             'supervisor' => user.supervisor,
             'department' => user.department,
             'basic_time' => user.basic_time.as_json,
-            'work_time' => user.work_time.as_json
+            'work_time' => user.work_time.as_json,
+            'designated_work_start_time' => user.designated_work_start_time.as_json,
+            'designated_work_end_time' => user.designated_work_end_time.as_json
           }
         expect(json_response).to eq(expected_data)
       end
@@ -119,6 +123,8 @@ RSpec.describe "Users", type: :request do
         'supervisor' => false,
         'basic_time' => Time.zone.now.change(hour: 8, min: 0, sec: 0).as_json,
         'work_time' => Time.zone.now.change(hour: 7, min: 30, sec: 0).as_json,
+        'designated_work_start_time' => Time.zone.parse('2000-01-01 09:00:00').as_json,
+        'designated_work_end_time' => Time.zone.parse('2000-01-01 18:00:00').as_json,
         'created_at' => nil,
         'department' => nil,
         'email' => nil,

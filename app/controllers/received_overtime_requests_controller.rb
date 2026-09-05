@@ -34,8 +34,10 @@ class ReceivedOvertimeRequestsController < ApplicationController
     # 自分宛ての申請だけを対象にすることで、他人の申請を書き換えられないようにする
     target_requests = @supervisor.received_overtime_requests.where(id: changes.keys)
 
-    target_requests.each do |overtime_request|
-      overtime_request.update!(status: changes[overtime_request.id.to_s]["status"])
+    OvertimeRequest.transaction do
+      target_requests.each do |overtime_request|
+        overtime_request.update!(status: changes[overtime_request.id.to_s]["status"])
+      end
     end
 
     target_requests.select { |overtime_request| NOTIFIABLE_STATUSES.include?(overtime_request.status) }
