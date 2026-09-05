@@ -1,10 +1,10 @@
 <%= turbo_frame_tag 'modal' do %>
-  <div data-controller="overtime-request">
-    <div class="modal-backdrop" data-action="click->overtime-request#close"></div>
+  <div data-controller="modal">
+    <div class="modal-backdrop" data-action="click->modal#close"></div>
     <div class="modal-dialog modal-lg modal-dialog-center">
       <div class="modal-content">
         <div class="modal-header">
-          <button type="button" class="close" data-action="overtime-request#close">×</button>
+          <button type="button" class="close" data-action="modal#close">×</button>
           <% if defined?(title) && title.present? %>
             <h1 class="modal-title"><%= title %></h1>
           <% end %>

@@ -13,6 +13,9 @@ ja:
           pending: "残業申請中"
           approved: "残業承認済"
           rejected: "残業否認"
+      user:
+        designated_work_start_time: "指定勤務開始時間"
+        designated_work_end_time: "指定勤務終了時間"
   date:
     abbr_day_names:
       - 日
