@@ -4,6 +4,8 @@ class ApplicationController < ActionController::Base
 
   $days_of_the_week = %w{日 月 火 水 木 金 土}
 
+  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
+
   # beforフィルター
 
   # paramsハッシュからユーザーを取得します。
@@ -51,4 +53,12 @@ class ApplicationController < ActionController::Base
     flash[:danger] = "ページ情報の取得に失敗しました、再アクセスしてください。"
     redirect_to root_url
   end
+
+  private
+
+    # 存在しないIDにアクセスされた場合の処理です。
+    def record_not_found
+      flash[:danger] = "対象のデータが見つかりませんでした。"
+      redirect_to root_url
+    end
 end
