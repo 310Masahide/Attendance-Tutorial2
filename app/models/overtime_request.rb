@@ -4,7 +4,6 @@ class OvertimeRequest < ApplicationRecord
 
   enum status: { unset: 0, pending: 1, approved: 2, rejected: 3 }
 
-  scope :unconfirmed_results, -> { where(status: [:approved, :rejected], applicant_confirmed: false) }
   scope :awaiting_decision,   -> { where(status: [:pending, :unset]) }
 
   validates :worked_on, presence: true

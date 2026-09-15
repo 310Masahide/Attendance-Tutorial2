@@ -50,20 +50,7 @@ class OvertimeRequestsController < ApplicationController
     # destroy.turbo_stream.erb で分岐して描画する
   end
 
-  def results
-    @unconfirmed_results = @user.overtime_requests.unconfirmed_results.includes(:approver).to_a
-    mark_results_as_confirmed(@unconfirmed_results)
-  end
-
   private
-
-    def mark_results_as_confirmed(overtime_requests)
-      return unless current_user?(@user)
-      return if overtime_requests.empty?
-
-      OvertimeRequest.where(id: overtime_requests.map(&:id))
-                     .update_all(applicant_confirmed: true)
-    end
 
     def set_user
       @user = User.find(params[:user_id])

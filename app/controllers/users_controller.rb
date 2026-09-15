@@ -112,6 +112,7 @@ class UsersController < ApplicationController
   def viewable_user
     return if current_user?(@user) || current_user.admin?
     return if current_user.received_overtime_requests.exists?(user_id: @user.id)
+    return if current_user.received_attendance_correction_requests.exists?(user_id: @user.id)
 
     flash[:danger] = "閲覧権限がありません。"
     redirect_to(root_url)

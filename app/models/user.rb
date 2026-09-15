@@ -71,4 +71,7 @@ class User < ApplicationRecord
   end
 
   scope :supervisors, -> { where(supervisor: true) }
+
+  has_many :received_attendance_correction_requests, class_name: "AttendanceCorrectionRequest", foreign_key: :approver_id, dependent: :destroy
+  has_many :attendance_correction_requests, dependent: :destroy
 end
