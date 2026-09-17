@@ -21,7 +21,7 @@ module AttendancesHelper
       notices << {
         label: "【勤怠変更申請のお知らせ】",
         path: received_attendance_correction_requests_user_path(user),
-        count: user.received_attendance_correction_requests.pending.count
+        count: user.received_attendance_correction_requests.awaiting_decision.count
       }
     end
 

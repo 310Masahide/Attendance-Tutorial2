@@ -3,7 +3,7 @@
     <% if overtime_request.editable? %>
       <%= link_to "#{overtime_request.approver.name}：#{overtime_request.status_label}",
             edit_user_overtime_request_path(@user, overtime_request),
-            data: { turbo_frame: 'modal' } %>
+            data: { turbo_frame: 'modal' } , class: "btn btn-primary btn-sm" %>
     <% else %>
       <%= overtime_request.approver.name %>：<%= overtime_request.status_label %>
     <% end %>

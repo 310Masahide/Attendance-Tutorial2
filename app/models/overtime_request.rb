@@ -36,7 +36,6 @@ class OvertimeRequest < ApplicationRecord
     approved? || rejected?
   end
 
-  # 申請中・却下された申請は、申請者本人が編集(再申請)できる
   def editable?
     pending? || rejected?
   end

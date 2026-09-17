@@ -1,10 +1,7 @@
 <%= turbo_stream.replace 'modal' do %>
-  <%= render layout: 'shared/modal', locals: { title: '【勤怠変更申請のお知らせ】' } do %>
-    <% if @decided_requests.present? %>
-      <%= render 'attendance_correction_requests/result_table', requests: @decided_requests %>
-    <% end %>
-    <%= render 'received_attendance_correction_requests/pending_section',
-               requests_by_applicant: @requests_by_applicant, supervisor: @supervisor %>
+  <%= render layout: 'shared/modal', locals: { title: '【残業申請のお知らせ】' } do %>
+    <%= render 'received_overtime_requests/pending_section', requests_by_applicant: @requests_by_applicant, supervisor: @supervisor %>
   <% end %>
 <% end %>
 <%= turbo_stream.update 'flash', partial: 'shared/flash_messages' %>
+

@@ -31,7 +31,7 @@ class AttendancesController < ApplicationController
   end
 
   def update_one_month
-    missing_approver_dates = []
+    applied_count = 0
 
     ActiveRecord::Base.transaction do # トランザクションを開始します。
       attendances_params.each do |id, item|
@@ -45,11 +45,7 @@ class AttendancesController < ApplicationController
                     attrs[:finished_at] != attendance.finished_at ||
                     attrs[:note].to_s != attendance.note.to_s
           next unless changed
-
-          if item[:approver_id].blank?
-            missing_approver_dates << attendance.worked_on
-            next
-          end
+          next if item[:approver_id].blank? # 承認者が未選択の行は申請対象外
 
           request = attendance.correction_request || attendance.build_correction_request
           request.update!(
@@ -60,19 +56,18 @@ class AttendancesController < ApplicationController
             note: attrs[:note],
             status: :pending
           )
+          applied_count += 1
         end
       end
-
-      raise ActiveRecord::Rollback if missing_approver_dates.any?
     end
 
-    if missing_approver_dates.any?
-      dates = missing_approver_dates.map { |date| I18n.l(date, format: :short) }.join("、")
-      flash[:danger] = "#{dates} は指示者確認印(承認者)が未選択のため、変更を申請できませんでした。承認者を選択してください。"
-      redirect_to(attendances_edit_one_month_user_url(date: params[:date])) and return
+    if current_user.admin?
+      flash[:success] = "1ヶ月分の勤怠情報を更新しました。"
+    elsif applied_count.positive?
+      flash[:success] = "#{applied_count}件の勤怠変更を申請しました。"
+    else
+      flash[:info] = "変更内容がありませんでした。"
     end
-
-    flash[:success] = current_user.admin? ? "1ヶ月分の勤怠情報を更新しました。" : "勤怠変更を申請しました。"
     redirect_to user_url(date: params[:date])
   rescue ActiveRecord::RecordInvalid
     flash[:danger] = "無効な入力データがあった為、更新をキャンセルしました。"
@@ -90,24 +85,24 @@ class AttendancesController < ApplicationController
     end
 
     def build_attendance_attributes(attendance, item)
-    {
-      started_at: build_time(attendance.worked_on, item[:started_at_hour], item[:started_at_minute]),
-      finished_at: build_time(attendance.worked_on, item[:finished_at_hour], item[:finished_at_minute],
-                               next_day: item[:finishes_next_day] == "1"),
-      note: item[:note]
-    }
-  end
+      {
+        started_at: build_time(attendance.worked_on, item[:started_at_hour], item[:started_at_minute]),
+        finished_at: build_time(attendance.worked_on, item[:finished_at_hour], item[:finished_at_minute],
+                                 next_day: item[:finishes_next_day] == "1"),
+        note: item[:note]
+      }
+    end
 
-  def build_time(base_date, hour, minute, next_day: false)
-    return nil if hour.blank? || minute.blank?
+    def build_time(base_date, hour, minute, next_day: false)
+      return nil if hour.blank? || minute.blank?
 
-    date = next_day ? base_date + 1.day : base_date
-    Time.zone.local(date.year, date.month, date.day, hour.to_i, minute.to_i)
-  end
+      date = next_day ? base_date + 1.day : base_date
+      Time.zone.local(date.year, date.month, date.day, hour.to_i, minute.to_i)
+    end
 
-  def set_approvers
-    @approvers = @user.approver_candidates
-  end
+    def set_approvers
+      @approvers = @user.approver_candidates
+    end
 
     # 管理権限者、または現在ログインしているユーザーを許可します。
     def admin_or_correct_user
@@ -115,6 +110,6 @@ class AttendancesController < ApplicationController
       unless current_user?(@user) || current_user.admin?
         flash[:danger] = "編集権限がありません。"
         redirect_to(root_url)
-      end  
+      end
     end
 end

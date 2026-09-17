@@ -58,7 +58,7 @@
                   <%= working_times(display_started, display_finished) %>
                 <% end %>
               </td>
-              <td><%= attendance.text_field :note, value: (pending_request&.note || day.note), class: "form-control" %></td>
+              <td><%= attendance.text_field :note, value: (pending_request&.note || day.note), maxlength: 50,class: "form-control" %></td>
               <% if shows_approver_column %>
                 <td>
                   <%= select_tag "user[attendances][#{day.id}][approver_id]",

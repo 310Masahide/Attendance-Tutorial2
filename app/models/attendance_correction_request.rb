@@ -8,9 +8,10 @@ class AttendanceCorrectionRequest < ApplicationRecord
   scope :awaiting_decision, -> { where(status: [:pending, :unset]) }
 
   validates :attendance_id, uniqueness: true
+  validates :note, length: { maximum: 50 }
   validate :approver_must_be_another_supervisor
   validate :requested_started_at_and_finished_at_must_be_both_or_neither
-  validate :requested_started_at_than_requested_finished_at_fast_if_invalid
+  validate :requested_started_at_must_be_before_requested_finished_at
 
   after_update :apply_to_attendance, if: -> { saved_change_to_status? && approved? }
 
@@ -49,13 +50,12 @@ class AttendanceCorrectionRequest < ApplicationRecord
       errors.add(:base, "出社時間と退社時間は両方入力するか、両方空欄にしてください")
     end
 
-    def requested_started_at_than_requested_finished_at_fast_if_invalid
+    def requested_started_at_must_be_before_requested_finished_at
       return if requested_started_at.blank? || requested_finished_at.blank?
 
       errors.add(:requested_started_at, "より早い退社時間は無効です") if requested_started_at > requested_finished_at
     end
 
-    # 承認された瞬間に、実際のAttendanceへ反映します。
     def apply_to_attendance
       attendance.update!(started_at: requested_started_at, finished_at: requested_finished_at, note: note)
     end

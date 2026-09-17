@@ -51,7 +51,7 @@
         <% end %>
         <th rowspan="3">日付</th>
         <th rowspan="3">曜日</th>
-        <th colspan="6">【実績】</th>
+        <th colspan="7">【実績】</th>
         <th colspan="5">所定外勤務</th>
       </tr>
       <tr>
@@ -59,6 +59,7 @@
         <th colspan="2">退社</th>
         <th rowspan="2">在社時間</th>
         <th rowspan="2">備考</th>
+        <th rowspan="2">指示者確認印</th>
         <th colspan="2">終了予定時間</th>
         <th rowspan="2">時間外時間</th>
         <th rowspan="2">業務処理内容</th>
@@ -80,6 +81,12 @@
         <% pending_request = correction_request if correction_request&.pending? %>
         <% display_started  = pending_request&.requested_started_at  || attendance.started_at %>
         <% display_finished = pending_request&.requested_finished_at || attendance.finished_at %>
+        <% correction_result_line = if correction_request&.decided?
+                                       correction_request.result_label
+                                     elsif correction_request&.pending?
+                                       "#{correction_request.approver.name}:勤怠変更申請中"
+                                     end %>
+        <% overtime_result_line = overtime_request&.status_label %>
         <tr>
           <% if shows_overtime_request_column %>
             <%= render 'users/overtime_request_cell',
@@ -102,19 +109,12 @@
             <% end %>
           </td>
           <td><%= pending_request&.note || attendance.note %></td>
+          <td><%= correction_result_line %></td>
           <td><%= format("%02d", overtime_request.finished_hour) if overtime_request %></td>
           <td><%= format("%02d", overtime_request.finished_minute) if overtime_request %></td>
           <td><%= format("%.2f", overtime_request.overtime_hours) if overtime_request %></td>
           <td><%= overtime_request&.content %></td>
-          <td>
-            <% if correction_request&.decided? %>
-              <%= correction_request.result_label %>
-            <% elsif correction_request&.pending? %>
-              <%= "#{correction_request.approver.name}：勤怠変更申請中" %>
-            <% elsif overtime_request %>
-              <%= overtime_request.status_label %>
-            <% end %>
-          </td>
+          <td><%= overtime_result_line %></td>
         </tr>
       <% end %>
     </tbody>
@@ -128,7 +128,7 @@
         <td colspan="2">累計日数</td>
         <td colspan="2">総合勤務時間</td>
         <td colspan="2">累計在社時間</td>
-        <td colspan="7" rowspan="2"></td>
+        <td colspan="8" rowspan="2"></td>
       </tr>
       <tr>
         <td colspan="2"><%= @attendances.count %></td>
