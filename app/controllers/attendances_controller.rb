@@ -31,35 +31,7 @@ class AttendancesController < ApplicationController
   end
 
   def update_one_month
-    applied_count = 0
-
-    ActiveRecord::Base.transaction do # トランザクションを開始します。
-      attendances_params.each do |id, item|
-        attendance = @user.attendances.find(id)
-
-        if current_user.admin?
-          attendance.update!(build_attendance_attributes(attendance, item))
-        else
-          attrs = build_attendance_attributes(attendance, item)
-          changed = attrs[:started_at] != attendance.started_at ||
-                    attrs[:finished_at] != attendance.finished_at ||
-                    attrs[:note].to_s != attendance.note.to_s
-          next unless changed
-          next if item[:approver_id].blank? # 承認者が未選択の行は申請対象外
-
-          request = attendance.correction_request || attendance.build_correction_request
-          request.update!(
-            user: @user,
-            approver_id: item[:approver_id],
-            requested_started_at:  attrs[:started_at],
-            requested_finished_at: attrs[:finished_at],
-            note: attrs[:note],
-            status: :pending
-          )
-          applied_count += 1
-        end
-      end
-    end
+    applied_count = current_user.admin? ? update_attendances_directly : request_attendance_corrections
 
     if current_user.admin?
       flash[:success] = "1ヶ月分の勤怠情報を更新しました。"
@@ -75,6 +47,46 @@ class AttendancesController < ApplicationController
   end
 
   private
+
+    def update_attendances_directly
+      ActiveRecord::Base.transaction do
+        attendances_params.each do |id, item|
+          attendance = @user.attendances.find(id)
+          attendance.update!(build_attendance_attributes(attendance, item))
+        end
+      end
+      0
+    end
+
+    # 一般ユーザーが勤怠変更を申請する経路
+    def request_attendance_corrections
+      applied_count = 0
+
+      ActiveRecord::Base.transaction do
+        attendances_params.each do |id, item|
+          attendance = @user.attendances.find(id)
+          attendance_attributes = build_attendance_attributes(attendance, item)
+          has_changes = attendance_attributes[:started_at] != attendance.started_at ||
+                        attendance_attributes[:finished_at] != attendance.finished_at ||
+                        attendance_attributes[:note].to_s != attendance.note.to_s
+          next unless has_changes
+          next if item[:approver_id].blank? # 承認者が未選択の行は申請対象外
+
+          request = attendance.correction_requests.awaiting_decision.first || attendance.correction_requests.build
+          request.update!(
+            user: @user,
+            approver_id: item[:approver_id],
+            requested_started_at:  attendance_attributes[:started_at],
+            requested_finished_at: attendance_attributes[:finished_at],
+            note: attendance_attributes[:note],
+            status: :pending
+          )
+          applied_count += 1
+        end
+      end
+
+      applied_count
+    end
 
     def attendances_params
       params.require(:user).permit(attendances: [

@@ -1,6 +1,11 @@
 class Attendance < ApplicationRecord
   belongs_to :user
-  has_one :correction_request, class_name: "AttendanceCorrectionRequest", dependent: :destroy
+  has_many :correction_requests, class_name: "AttendanceCorrectionRequest", dependent: :destroy
+
+  # 履歴の中から「今表示すべき最新の申請」を1件返します(申請中でも決着済みでもOK)。
+  def correction_request
+    correction_requests.max_by(&:created_at)
+  end
 
   validates :worked_on, presence: true
   validates :note, length: { maximum: 50 }

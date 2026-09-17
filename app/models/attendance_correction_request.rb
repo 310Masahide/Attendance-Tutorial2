@@ -7,7 +7,7 @@ class AttendanceCorrectionRequest < ApplicationRecord
 
   scope :awaiting_decision, -> { where(status: [:pending, :unset]) }
 
-  validates :attendance_id, uniqueness: true
+  validates :attendance_id, uniqueness: { conditions: -> { awaiting_decision } }
   validates :note, length: { maximum: 50 }
   validate :approver_must_be_another_supervisor
   validate :requested_started_at_and_finished_at_must_be_both_or_neither
