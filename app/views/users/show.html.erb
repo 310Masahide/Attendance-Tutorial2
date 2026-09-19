@@ -43,7 +43,11 @@
   <table class="table table-bordered table-condensed table-hover" id="table-attendances">
 
     <% shows_overtime_request_column = !current_user.admin? && !readonly %>
-    
+
+    <% result_columns   = 7 %><%# 出社2 + 退社2 + 在社時間 + 備考 + 指示者確認印 %>
+    <% overtime_columns = 5 %><%# 終了予定2 + 時間外時間 + 業務処理内容 + 指示者確認印 %>
+    <% total_columns    = 2 + result_columns + overtime_columns %><%# 日付+曜日 + 【実績】+ 所定外勤務(残業申請列は別枠なので含まない) %>
+
     <thead>
       <tr>
         <% if shows_overtime_request_column %>
@@ -51,8 +55,8 @@
         <% end %>
         <th rowspan="3">日付</th>
         <th rowspan="3">曜日</th>
-        <th colspan="7">【実績】</th>
-        <th colspan="5">所定外勤務</th>
+        <th colspan="<%= result_columns %>">【実績】</th>
+        <th colspan="<%= overtime_columns %>">所定外勤務</th>
       </tr>
       <tr>
         <th colspan="2">出社</th>
@@ -77,14 +81,14 @@
     <tbody>
       <% @attendances.each do |attendance| %>
         <% overtime_request = @overtime_requests_by_date[attendance.worked_on] %>
-        <% correction_request = attendance.correction_request %>
+        <% correction_request = attendance.latest_correction_request %>
         <% pending_request = correction_request if correction_request&.pending? %>
         <% display_started  = pending_request&.requested_started_at  || attendance.started_at %>
         <% display_finished = pending_request&.requested_finished_at || attendance.finished_at %>
         <% correction_result_line = if correction_request&.decided?
                                        correction_request.result_label
                                      elsif correction_request&.pending?
-                                       "#{correction_request.approver.name}:勤怠変更申請中"
+                                       "#{correction_request.approver.name}：勤怠変更申請中"
                                      end %>
         <% overtime_result_line = overtime_request&.status_label %>
         <tr>
@@ -128,7 +132,7 @@
         <td colspan="2">累計日数</td>
         <td colspan="2">総合勤務時間</td>
         <td colspan="2">累計在社時間</td>
-        <td colspan="8" rowspan="2"></td>
+        <td colspan="<%= total_columns - 6 %>" rowspan="2"></td>
       </tr>
       <tr>
         <td colspan="2"><%= @attendances.count %></td>

@@ -8,7 +8,7 @@ class AttendanceCorrectionRequest < ApplicationRecord
   scope :awaiting_decision, -> { where(status: [:pending, :unset]) }
 
   validates :attendance_id, uniqueness: { conditions: -> { awaiting_decision } }
-  validates :note, length: { maximum: 50 }
+  validates :note, length: { maximum: Attendance::NOTE_MAX_LENGTH }
   validate :approver_must_be_another_supervisor
   validate :requested_started_at_and_finished_at_must_be_both_or_neither
   validate :requested_started_at_must_be_before_requested_finished_at
@@ -56,6 +56,7 @@ class AttendanceCorrectionRequest < ApplicationRecord
       errors.add(:requested_started_at, "より早い退社時間は無効です") if requested_started_at > requested_finished_at
     end
 
+    # 承認された瞬間に、実際のAttendanceへ反映します。(16行目のafter_updateから呼ばれます)
     def apply_to_attendance
       attendance.update!(started_at: requested_started_at, finished_at: requested_finished_at, note: note)
     end

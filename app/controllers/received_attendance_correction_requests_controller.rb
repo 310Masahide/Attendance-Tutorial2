@@ -5,8 +5,6 @@ class ReceivedAttendanceCorrectionRequestsController < ApplicationController
 
   # 上長が一括で切り替えられるステータス
   SELECTABLE_STATUSES = %w[unset pending approved rejected].freeze
-  # 申請者に結果として通知するステータス
-  NOTIFIABLE_STATUSES = %w[approved rejected].freeze
 
   def index
     return redirect_to(@supervisor) unless turbo_frame_request?
@@ -15,7 +13,7 @@ class ReceivedAttendanceCorrectionRequestsController < ApplicationController
   end
 
   def bulk_update
-    @decided_requests      = apply_status_changes(submitted_changes)
+    apply_status_changes(submitted_changes)
     @requests_by_applicant = pending_requests_by_applicant
   end
 
@@ -39,8 +37,6 @@ class ReceivedAttendanceCorrectionRequestsController < ApplicationController
         request.update!(status: changes[request.id.to_s]["status"])
       end
     end
-
-    target_requests.select { |request| NOTIFIABLE_STATUSES.include?(request.status) }
   end
 
   def pending_requests_by_applicant
