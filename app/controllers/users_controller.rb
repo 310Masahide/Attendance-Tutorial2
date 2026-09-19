@@ -20,8 +20,6 @@ class UsersController < ApplicationController
   def show
     @worked_sum = @attendances.where.not(started_at: nil).count
     @overtime_requests_by_date = @user.overtime_requests.includes(:approver).index_by(&:worked_on)
-    @unconfirmed_results_count = current_user.overtime_requests.unconfirmed_results.count
-    @pending_overtime_requests_count = current_user.supervisor? ? current_user.received_overtime_requests.pending.count : 0
     respond_to do |format|
       format.html
       format.json { render json: @user }
@@ -114,6 +112,7 @@ class UsersController < ApplicationController
   def viewable_user
     return if current_user?(@user) || current_user.admin?
     return if current_user.received_overtime_requests.exists?(user_id: @user.id)
+    return if current_user.received_attendance_correction_requests.exists?(user_id: @user.id)
 
     flash[:danger] = "閲覧権限がありません。"
     redirect_to(root_url)
@@ -121,5 +120,10 @@ class UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:name, :email, :department, :password, :password_confirmation)
+  end
+
+  def basic_info_params
+    params.require(:user).permit(:department, :basic_time, :work_time,
+                                  :designated_work_start_time, :designated_work_end_time)
   end
 end

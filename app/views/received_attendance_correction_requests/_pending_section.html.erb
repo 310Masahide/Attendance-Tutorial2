@@ -1,0 +1,76 @@
+<% if requests_by_applicant.blank? %>
+  <p class="text-center text-muted">未処理の勤怠変更申請はありません。</p>
+<% else %>
+  <%= form_with url: bulk_update_received_attendance_correction_requests_user_path(supervisor),
+                method: :patch, local: false,
+                id: "bulk_update_correction_form",
+                data: { action: "submit->modal#submit" } do %>
+    <% requests_by_applicant.each do |applicant, requests| %>
+      <h2 class="applicant-name">【<%= applicant.name %>からの勤怠変更申請】</h2>
+      <table class="table table-bordered notice-table">
+        <thead>
+          <tr>
+            <th rowspan="3">日付</th>
+            <th rowspan="3">曜日</th>
+            <th colspan="4" class="text-center">変更前</th>
+            <th colspan="4" class="text-center">変更後</th>
+            <th rowspan="3" class="text-center">備考</th>
+            <th rowspan="3">指示者確認印</th>
+            <th rowspan="3">変更</th>
+            <th rowspan="3">勤怠を確認する</th>
+          </tr>
+          <tr>
+            <th colspan="2" class="text-center">出社</th>
+            <th colspan="2" class="text-center">退社</th>
+            <th colspan="2" class="text-center">出社</th>
+            <th colspan="2" class="text-center">退社</th>
+          </tr>
+          <tr>
+            <th>時</th><th>分</th>
+            <th>時</th><th>分</th>
+            <th>時</th><th>分</th>
+            <th>時</th><th>分</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% requests.each do |request| %>
+            <% before_started  = request.attendance.started_at %>
+            <% before_finished = request.attendance.finished_at %>
+            <% after_started   = request.requested_started_at %>
+            <% after_finished  = request.requested_finished_at %>
+            <tr>
+              <td><%= l(request.attendance.worked_on, format: :short) %></td>
+              <td><%= $days_of_the_week[request.attendance.worked_on.wday] %></td>
+              <td><%= format("%02d", before_started.hour)  if before_started %></td>
+              <td><%= format("%02d", before_started.min)   if before_started %></td>
+              <td><%= format("%02d", before_finished.hour) if before_finished %></td>
+              <td><%= format("%02d", before_finished.min)  if before_finished %></td>
+              <td><%= format("%02d", after_started.hour)   if after_started %></td>
+              <td><%= format("%02d", after_started.min)    if after_started %></td>
+              <td><%= format("%02d", after_finished.hour)  if after_finished %></td>
+              <td><%= format("%02d", after_finished.min)   if after_finished %></td>
+              <td><%= request.note %></td>
+              <td>
+                <%= select_tag "attendance_correction_requests[#{request.id}][status]",
+                      options_for_select(AttendanceCorrectionRequest.status_options, request.status),
+                      class: "form-control" %>
+              </td>
+              <td>
+                <%= check_box_tag "attendance_correction_requests[#{request.id}][apply]", "1" %>
+              </td>
+              <td>
+                <%= link_to "確認",
+                      user_path(applicant, date: request.attendance.worked_on.beginning_of_month, readonly: true),
+                      data: { turbo_frame: "_top" },
+                      class: "btn btn-primary btn-block" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+  <% content_for :modal_footer do %>
+    <%= submit_tag "変更を送信する", form: "bulk_update_correction_form", class: "btn btn-primary btn-block" %>
+  <% end %>
+<% end %>
