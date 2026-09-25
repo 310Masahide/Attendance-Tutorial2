@@ -24,6 +24,15 @@ ja:
           pending: "申請中"
           approved: "承認"
           rejected: "否認"
+      monthly_approval:
+        month: "対象月"
+        approver: "指示者"
+        approver_id: "指示者"
+        statuses:
+          unset: "未"
+          pending: "申請中"
+          approved: "済"
+          rejected: "否認"
       user:
         designated_work_start_time: "指定勤務開始時間"
         designated_work_end_time: "指定勤務終了時間"

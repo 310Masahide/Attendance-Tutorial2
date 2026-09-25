@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_17_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_23_201700) do
   create_table "attendance_correction_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "user_id", null: false
@@ -36,6 +36,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_17_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_attendances_on_user_id"
+  end
+
+  create_table "monthly_approvals", charset: "utf8mb4", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "approver_id", null: false
+    t.date "month", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approver_id"], name: "index_monthly_approvals_on_approver_id"
+    t.index ["user_id", "month"], name: "index_monthly_approvals_on_user_id_and_month", unique: true
+    t.index ["user_id"], name: "index_monthly_approvals_on_user_id"
   end
 
   create_table "overtime_requests", charset: "utf8mb4", force: :cascade do |t|
@@ -76,6 +88,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_17_120000) do
   add_foreign_key "attendance_correction_requests", "users"
   add_foreign_key "attendance_correction_requests", "users", column: "approver_id"
   add_foreign_key "attendances", "users"
+  add_foreign_key "monthly_approvals", "users"
+  add_foreign_key "monthly_approvals", "users", column: "approver_id"
   add_foreign_key "overtime_requests", "users"
   add_foreign_key "overtime_requests", "users", column: "approver_id"
 end

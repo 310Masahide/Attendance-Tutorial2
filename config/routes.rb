@@ -19,8 +19,11 @@ Rails.application.routes.draw do
             as: :received_attendance_correction_requests
       patch 'received_attendance_correction_requests', to: 'received_attendance_correction_requests#bulk_update',
             as: :bulk_update_received_attendance_correction_requests
+      get   'received_monthly_approvals', to: 'received_monthly_approvals#index',        as: :received_monthly_approvals
+      patch 'received_monthly_approvals', to: 'received_monthly_approvals#bulk_update',  as: :bulk_update_received_monthly_approvals
     end
     resources :attendances, only: :update
     resources :overtime_requests, only: [:new, :create, :edit, :update, :destroy]
+    resources :monthly_approvals, only: [:create, :update]
   end
 end

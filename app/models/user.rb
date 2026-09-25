@@ -4,6 +4,8 @@ class User < ApplicationRecord
   has_many :received_overtime_requests, class_name: "OvertimeRequest", foreign_key: :approver_id, dependent: :destroy
   has_many :received_attendance_correction_requests, class_name: "AttendanceCorrectionRequest", foreign_key: :approver_id, dependent: :destroy
   has_many :attendance_correction_requests, dependent: :destroy
+  has_many :monthly_approvals, dependent: :destroy
+  has_many :received_monthly_approvals, class_name: "MonthlyApproval", foreign_key: :approver_id, dependent: :destroy
 
   scope :supervisors, -> { where(supervisor: true) }
 
