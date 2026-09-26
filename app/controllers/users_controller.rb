@@ -73,8 +73,11 @@ class UsersController < ApplicationController
 
 
   def destroy
-    @user.destroy
-    flash[:success] = "#{@user.name}のデータを削除しました。"
+    if @user.destroy
+      flash[:success] = "#{ERB::Util.html_escape(@user.name)}のデータを削除しました。"
+    else
+      flash[:danger] = "#{ERB::Util.html_escape(@user.name)}の削除に失敗しました。#{@user.errors.full_messages.join('、')}"
+    end
 
     respond_to do |format|
       format.html { redirect_to users_url }
@@ -97,9 +100,9 @@ class UsersController < ApplicationController
 
   def update_basic_info
     if @user.update(basic_info_params)
-      flash[:success] = "#{@user.name}の基本情報を更新しました。"
+      flash[:success] = "#{ERB::Util.html_escape(@user.name)}の基本情報を更新しました。"
     else
-      flash[:danger] = "#{@user.name}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
+      flash[:danger] = "#{ERB::Util.html_escape(@user.name)}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
     end
   
     respond_to do |format|

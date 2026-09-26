@@ -1,10 +1,7 @@
 class ReceivedOvertimeRequestsController < ApplicationController
   before_action :logged_in_user
-  before_action :set_supervisor
-  before_action :correct_supervisor
-
-  # 上長が一括で切り替えられるステータス
-  SELECTABLE_STATUSES = %w[unset pending approved rejected].freeze
+  include SupervisorScoped
+  include BulkStatusUpdatable
 
   def index
     return redirect_to(@supervisor) unless turbo_frame_request?
@@ -13,48 +10,14 @@ class ReceivedOvertimeRequestsController < ApplicationController
   end
 
   def bulk_update
-    apply_status_changes(submitted_changes)
+    failed_count = apply_status_changes(@supervisor.received_overtime_requests, submitted_changes(:overtime_requests))
+    flash.now[:danger] = "#{failed_count}件の更新に失敗しました。" if failed_count.positive?
     @requests_by_applicant = pending_requests_by_applicant
   end
 
   private
 
-  # 「変更」にチェックが入っていて、かつ選択肢に無いステータスを弾いた行だけを返す
-  def submitted_changes
-    submitted = params[:overtime_requests] || {}
-
-    submitted.to_unsafe_h.select do |_id, attributes|
-      attributes["apply"] == "1" && SELECTABLE_STATUSES.include?(attributes["status"])
+    def pending_requests_by_applicant
+      group_pending_by_applicant(@supervisor.received_overtime_requests, includes: [:user], order: :worked_on)
     end
-  end
-
-  def apply_status_changes(changes)
-    # 自分宛ての申請だけを対象にすることで、他人の申請を書き換えられないようにする
-    target_requests = @supervisor.received_overtime_requests.where(id: changes.keys)
-
-    OvertimeRequest.transaction do
-      target_requests.each do |overtime_request|
-        overtime_request.update!(status: changes[overtime_request.id.to_s]["status"])
-      end
-    end
-  end
-
-  def pending_requests_by_applicant
-    @supervisor.received_overtime_requests
-               .where(status: %i[pending unset])
-               .includes(:user)
-               .order(:worked_on)
-               .group_by(&:user)
-  end
-
-  def set_supervisor
-    @supervisor = User.find(params[:id])
-  end
-
-  def correct_supervisor
-    return if current_user?(@supervisor) && current_user.supervisor?
-
-    flash[:danger] = "権限がありません。"
-    redirect_to(root_url)
-  end
 end

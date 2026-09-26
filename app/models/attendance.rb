@@ -13,15 +13,6 @@ class Attendance < ApplicationRecord
   validate :finished_at_is_invalid_without_a_started_at
   validate :started_at_must_be_before_finished_at
 
-  def started_at_hour;   started_at&.hour; end
-  def started_at_minute; started_at&.min;  end
-  def finished_at_hour;  finished_at&.hour; end
-  def finished_at_minute; finished_at&.min; end
-
-  def finishes_next_day?
-    finished_at.present? && finished_at.to_date > worked_on
-  end
-
   def finished_at_is_invalid_without_a_started_at
     errors.add(:started_at, "が必要です") if started_at.blank? && finished_at.present?
   end

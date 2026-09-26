@@ -1,31 +1,11 @@
 class AttendancesController < ApplicationController
+  include AdminOrCorrectUserScoped
+
   before_action :set_user, only: [:edit_one_month, :update_one_month]
-  before_action :logged_in_user, only: [:update, :edit_one_month, :update_one_month]
-  before_action :admin_or_correct_user, only: [:update, :edit_one_month, :update_one_month]
+  before_action :logged_in_user, only: [:edit_one_month, :update_one_month]
+  before_action :admin_or_correct_user, only: [:edit_one_month, :update_one_month]
   before_action :set_one_month, only: :edit_one_month
   before_action :set_approvers, only: :edit_one_month
-
-  UPDATE_ERROR_MSG = "勤怠登録に失敗しました。やり直してください。"
-
-  def update
-    @user = User.find(params[:user_id])
-    @attendance = Attendance.find(params[:id])
-    # 出勤時間が未登録であることを判定します。
-    if @attendance.started_at.nil?
-      if @attendance.update(started_at: Time.current.change(sec: 0))
-        flash[:info] = "おはようございます！"
-      else
-        flash[:danger] = UPDATE_ERROR_MSG
-      end
-    elsif @attendance.finished_at.nil?
-      if @attendance.update(finished_at: Time.current.change(sec: 0))
-        flash[:info] = "お疲れ様でした。"
-      else
-        flash[:danger] = UPDATE_ERROR_MSG
-      end
-    end
-    redirect_to @user
-  end
 
   def edit_one_month
   end
@@ -35,60 +15,86 @@ class AttendancesController < ApplicationController
       update_attendances_directly
       flash[:success] = "1ヶ月分の勤怠情報を更新しました。"
     else
-      applied_count, dates_without_approver = request_attendance_corrections
+      applied_count, dates_without_approver, invalid_dates = request_attendance_corrections
+      messages = []
 
       if dates_without_approver.any?
         dates = dates_without_approver.map { |date| I18n.l(date, format: :short) }.join("、")
-        message = "#{dates} は指示者確認印(承認者)が未選択のため、申請できませんでした。承認者を選択してください。"
-        if applied_count.positive?
-          flash[:success] = "#{applied_count}件の勤怠変更を申請しました。#{message}"
-        else
-          flash[:danger] = message
-        end
-      elsif applied_count.positive?
-        flash[:success] = "#{applied_count}件の勤怠変更を申請しました。"
+        messages << "#{dates} は指示者確認印(承認者)が未選択のため、申請できませんでした。承認者を選択してください。"
+      end
+
+      if invalid_dates.any?
+        dates = invalid_dates.map { |date| I18n.l(date, format: :short) }.join("、")
+        messages << "#{dates} は入力内容が無効なため、申請できませんでした。"
+      end
+
+      if applied_count.positive?
+        flash[:success] = "#{applied_count}件の勤怠変更を申請しました。#{messages.join}"
+      elsif messages.any?
+        flash[:danger] = messages.join
       else
         flash[:info] = "変更内容がありませんでした。"
       end
     end
 
     redirect_to user_url(date: params[:date])
-  rescue ActiveRecord::RecordInvalid
+  rescue ActiveRecord::RecordInvalid, ArgumentError
     flash[:danger] = "無効な入力データがあった為、更新をキャンセルしました。"
+    redirect_to attendances_edit_one_month_user_url(date: params[:date])
+  rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked
+    flash[:danger] = "他の操作と競合したため、更新できませんでした。もう一度お試しください。"
     redirect_to attendances_edit_one_month_user_url(date: params[:date])
   end
 
   private
 
-    def update_attendances_directly
-      ActiveRecord::Base.transaction do
-        attendances_params.each do |id, item|
-          attendance = @user.attendances.find(id)
-          attendance.update!(build_attendance_attributes(attendance, item))
-        end
+  def update_attendances_directly
+    attendances = @user.attendances.includes(:correction_requests).where(id: attendances_params.keys).index_by { |attendance| attendance.id.to_s }
+
+    ActiveRecord::Base.transaction do
+      attendances_params.each do |id, item|
+        attendance = attendances[id]
+        next unless attendance
+
+        attendance.update!(build_attendance_attributes(attendance, item))
+        next unless attendance.saved_changes.except("updated_at").any?
+
+        # 管理者が直接内容を確定させたので、その日の保留中の申請は無効(却下)にする
+        # (.includesでまとめ取得済みのデータを使うため、awaiting_decisionスコープ(where)ではなくメモリ内でフィルタする)
+        attendance.correction_requests.select { |r| r.pending? || r.unset? }.each { |request| request.update!(status: :rejected) }
       end
     end
+  end
 
     # 一般ユーザーが勤怠変更を申請する経路
     def request_attendance_corrections
       applied_count = 0
       dates_without_approver = []
+      invalid_dates = []
+      attendances = @user.attendances.includes(:correction_requests)
+                          .where(id: attendances_params.keys)
+                          .index_by { |attendance| attendance.id.to_s }
 
-      ActiveRecord::Base.transaction do
-        attendances_params.each do |id, item|
-          attendance = @user.attendances.find(id)
-          attendance_attributes = build_attendance_attributes(attendance, item)
-          has_changes = attendance_attributes[:started_at] != attendance.started_at ||
-                        attendance_attributes[:finished_at] != attendance.finished_at ||
-                        attendance_attributes[:note].to_s != attendance.note.to_s
-          next unless has_changes
+      attendances_params.each do |id, item|
+        attendance = attendances[id]
+        next unless attendance
 
-          if item[:approver_id].blank?
-            dates_without_approver << attendance.worked_on
-            next
-          end
+        attendance_attributes = build_attendance_attributes(attendance, item)
+        next unless attendance_changed?(attendance, attendance_attributes)
 
-          request = attendance.correction_requests.awaiting_decision.first || attendance.correction_requests.build
+        if item[:approver_id].blank?
+          dates_without_approver << attendance.worked_on
+          next
+        end
+
+        ActiveRecord::Base.transaction do
+          # ここまではまとめ取得した(古いかもしれない)データでの判定なので、
+          # 申請を作る直前に最新状態へロックし直し、変更の有無を確定させる
+          attendance.lock!
+          attendance.correction_requests.reload
+          next unless attendance_changed?(attendance, attendance_attributes)
+
+          request = attendance.correction_requests.detect { |r| r.pending? || r.unset? } || attendance.correction_requests.build
           request.update!(
             user: @user,
             approver_id: item[:approver_id],
@@ -99,9 +105,29 @@ class AttendancesController < ApplicationController
           )
           applied_count += 1
         end
+      rescue ActiveRecord::RecordInvalid, ArgumentError
+        invalid_dates << attendance.worked_on
       end
 
-      [applied_count, dates_without_approver]
+      [applied_count, dates_without_approver, invalid_dates]
+    end
+
+    def attendance_changed?(attendance, attendance_attributes)
+      existing_request = attendance.correction_requests.detect { |r| r.pending? || r.unset? }
+
+      if existing_request
+        baseline_started_at  = existing_request.requested_started_at
+        baseline_finished_at = existing_request.requested_finished_at
+        baseline_note        = existing_request.note
+      else
+        baseline_started_at  = attendance.started_at
+        baseline_finished_at = attendance.finished_at
+        baseline_note        = attendance.note
+      end
+
+      attendance_attributes[:started_at] != baseline_started_at ||
+        attendance_attributes[:finished_at] != baseline_finished_at ||
+        attendance_attributes[:note].to_s != baseline_note.to_s
     end
 
     def attendances_params
@@ -109,7 +135,7 @@ class AttendancesController < ApplicationController
         :started_at_hour, :started_at_minute,
         :finished_at_hour, :finished_at_minute,
         :finishes_next_day, :note, :approver_id
-      ])[:attendances]
+      ])[:attendances] || {}
     end
 
     def build_attendance_attributes(attendance, item)
@@ -130,14 +156,5 @@ class AttendancesController < ApplicationController
 
     def set_approvers
       @approvers = @user.approver_candidates
-    end
-
-    # 管理権限者、または現在ログインしているユーザーを許可します。
-    def admin_or_correct_user
-      @user = User.find(params[:user_id]) if @user.blank?
-      unless current_user?(@user) || current_user.admin?
-        flash[:danger] = "編集権限がありません。"
-        redirect_to(root_url)
-      end
     end
 end

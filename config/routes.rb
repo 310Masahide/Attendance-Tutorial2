@@ -22,7 +22,6 @@ Rails.application.routes.draw do
       get   'received_monthly_approvals', to: 'received_monthly_approvals#index',        as: :received_monthly_approvals
       patch 'received_monthly_approvals', to: 'received_monthly_approvals#bulk_update',  as: :bulk_update_received_monthly_approvals
     end
-    resources :attendances, only: :update
     resources :overtime_requests, only: [:new, :create, :edit, :update, :destroy]
     resources :monthly_approvals, only: [:create, :update]
   end

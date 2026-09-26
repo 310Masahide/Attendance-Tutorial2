@@ -21,9 +21,9 @@
       <tbody>
         <% @attendances.each do |day| %>
           <%= f.fields_for "attendances[]", day do |attendance| %>
-            <% pending_request  = day.latest_correction_request if !current_user.admin? && day.latest_correction_request&.editable? %>
-            <% display_started  = pending_request&.requested_started_at  || day.started_at %>
-            <% display_finished = pending_request&.requested_finished_at || day.finished_at %>
+            <% pending_request  = day.latest_correction_request if !current_user.admin? && day.latest_correction_request&.pending? %>
+            <% display_started  = pending_request ? pending_request.requested_started_at  : day.started_at %>
+            <% display_finished = pending_request ? pending_request.requested_finished_at : day.finished_at %>
             <tr>
               <td><%= l(day.worked_on, format: :short) %></td>
               <td><%= $days_of_the_week[day.worked_on.wday] %></td>
@@ -61,9 +61,9 @@
               <td><%= attendance.text_field :note, value: (pending_request&.note || day.note), maxlength: Attendance::NOTE_MAX_LENGTH, class: "form-control" %></td>
               <% if shows_approver_column %>
                 <td>
-                  <%= select_tag "user[attendances][#{day.id}][approver_id]",
-                        options_from_collection_for_select(@approvers, :id, :name, day.latest_correction_request&.approver_id),
-                        include_blank: "―", class: "form-control input-sm" %>
+                <%= select_tag "user[attendances][#{day.id}][approver_id]",
+                      options_from_collection_for_select(@approvers, :id, :name, pending_request&.approver_id),
+                      include_blank: "―", class: "form-control input-sm" %>
                 </td>
               <% end %>
             </tr>

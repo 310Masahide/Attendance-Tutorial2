@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_23_201700) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_26_010317) do
   create_table "attendance_correction_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "user_id", null: false
@@ -19,7 +19,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_23_201700) do
     t.datetime "requested_finished_at"
     t.string "note"
     t.integer "status", default: 1, null: false
-    t.boolean "applicant_confirmed", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["approver_id"], name: "index_attendance_correction_requests_on_approver_id"
@@ -61,7 +60,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_23_201700) do
     t.string "content"
     t.bigint "approver_id"
     t.integer "status", default: 1, null: false
-    t.boolean "applicant_confirmed", default: false, null: false
     t.index ["approver_id"], name: "index_overtime_requests_on_approver_id"
     t.index ["user_id", "worked_on"], name: "index_overtime_requests_on_user_id_and_worked_on", unique: true
     t.index ["user_id"], name: "index_overtime_requests_on_user_id"

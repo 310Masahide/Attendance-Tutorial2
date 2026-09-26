@@ -47,6 +47,7 @@
     <% result_columns   = 7 %><%# 出社2 + 退社2 + 在社時間 + 備考 + 指示者確認印 %>
     <% overtime_columns = 5 %><%# 終了予定2 + 時間外時間 + 業務処理内容 + 指示者確認印 %>
     <% total_columns    = 2 + result_columns + overtime_columns %><%# 日付+曜日 + 【実績】+ 所定外勤務(残業申請列は別枠なので含まない) %>
+    <% tfoot_fixed_columns = 7 %><%# 累計日数2 + 総合勤務時間2 + 累計在社時間2 + 所属長承認1(下記tfootの固定セル数) %>
     <% monthly_approval_status_text =
          if @monthly_approval.persisted? && @monthly_approval.decided?
            "#{@monthly_approval.approver.name}から#{@monthly_approval.approved? ? '承認' : '否認'}済"
@@ -90,8 +91,8 @@
         <% overtime_request = @overtime_requests_by_date[attendance.worked_on] %>
         <% correction_request = attendance.latest_correction_request %>
         <% pending_request = correction_request if correction_request&.pending? %>
-        <% display_started  = pending_request&.requested_started_at  || attendance.started_at %>
-        <% display_finished = pending_request&.requested_finished_at || attendance.finished_at %>
+        <% display_started  = pending_request ? pending_request.requested_started_at  : attendance.started_at %>
+        <% display_finished = pending_request ? pending_request.requested_finished_at : attendance.finished_at %>
         <% correction_result_line = if correction_request&.decided?
                                        correction_request.result_label
                                      elsif correction_request&.pending?
@@ -139,7 +140,7 @@
         <td colspan="2">累計日数</td>
         <td colspan="2">総合勤務時間</td>
         <td colspan="2">累計在社時間</td>
-        <td colspan="<%= total_columns - 7 %>" rowspan="2"></td>
+        <td colspan="<%= total_columns - tfoot_fixed_columns %>" rowspan="2"></td>
         <td rowspan="2">
           <% unless readonly %>
             <%= form_with model: @monthly_approval,
@@ -147,7 +148,7 @@
                   local: true do |f| %>
               所属長承認  <%= monthly_approval_status_text %>
               <br>
-              <%= f.hidden_field :month, value: @first_day %>
+              <%= f.hidden_field :month, value: @first_day.beginning_of_month %>
               <%= f.collection_select :approver_id, @user.approver_candidates, :id, :name, { include_blank: "―"}, class: "form-control input-sm" %>
               <br>
               <%= f.submit "申請", class: "btn btn-primary btn-block" %>

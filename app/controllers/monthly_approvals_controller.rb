@@ -1,4 +1,6 @@
 class MonthlyApprovalsController < ApplicationController
+  include AdminOrCorrectUserScoped
+
   before_action :logged_in_user
   before_action :set_user
   before_action :admin_or_correct_user
@@ -12,6 +14,9 @@ class MonthlyApprovalsController < ApplicationController
       flash[:danger] = "月次承認の申請に失敗しました。"
     end
     redirect_to user_url(@user, date: monthly_approval_params[:month])
+  rescue ActiveRecord::RecordNotUnique
+    flash[:danger] = "既に同じ月の申請が存在します。画面を更新してからやり直してください。"
+    redirect_to user_url(@user, date: monthly_approval_params[:month])
   end
 
   def update
@@ -21,19 +26,15 @@ class MonthlyApprovalsController < ApplicationController
       flash[:danger] = "月次承認の再申請に失敗しました。"
     end
     redirect_to user_url(@user, date: monthly_approval_params[:month])
+  rescue ActiveRecord::RecordNotUnique
+    flash[:danger] = "既に同じ月の申請が存在します。画面を更新してからやり直してください。"
+    redirect_to user_url(@user, date: monthly_approval_params[:month])
   end
 
   private
 
     def set_user
       @user = User.find(params[:user_id])
-    end
-
-    def admin_or_correct_user
-      unless current_user?(@user) || current_user.admin?
-        flash[:danger] = "権限がありません。"
-        redirect_to(root_url)
-      end
     end
 
     def monthly_approval_params
