@@ -2,7 +2,7 @@ module BulkStatusUpdatable
   extend ActiveSupport::Concern
 
   # 上長が一括で切り替えられるステータス
-  SELECTABLE_STATUSES = %w[pending approved rejected].freeze
+  SELECTABLE_STATUSES = %w[unset pending approved rejected].freeze
 
   private
 

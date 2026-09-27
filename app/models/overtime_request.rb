@@ -26,9 +26,8 @@ class OvertimeRequest < ApplicationRecord
     (overtime_minutes / 60.0).round(2)
   end
 
-  # 申請中・却下された申請は、申請者本人が編集(再申請)できる
+  # 承認済み以外(申請中・否認・差し戻し(なし))は、申請者本人が編集(再申請)できる
   def editable?
-    pending? || rejected?
+    !approved?
   end
 end
-

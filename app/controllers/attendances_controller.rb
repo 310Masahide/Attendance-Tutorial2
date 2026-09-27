@@ -15,7 +15,7 @@ class AttendancesController < ApplicationController
       update_attendances_directly
       flash[:success] = "1ヶ月分の勤怠情報を更新しました。"
     else
-      applied_count, dates_without_approver, invalid_dates = request_attendance_corrections
+      applied_count, withdrawn_count, dates_without_approver, invalid_dates = request_attendance_corrections
       messages = []
 
       if dates_without_approver.any?
@@ -28,13 +28,12 @@ class AttendancesController < ApplicationController
         messages << "#{dates} は入力内容が無効なため、申請できませんでした。"
       end
 
-      if applied_count.positive?
-        flash[:success] = "#{applied_count}件の勤怠変更を申請しました。#{messages.join}"
-      elsif messages.any?
-        flash[:danger] = messages.join
-      else
-        flash[:info] = "変更内容がありませんでした。"
-      end
+      success_messages = []
+      success_messages << "#{applied_count}件の勤怠変更を申請しました。" if applied_count.positive?
+      success_messages << "#{withdrawn_count}件の勤怠変更申請を取り下げました。" if withdrawn_count.positive?
+      flash[:success] = success_messages.join if success_messages.any?
+      flash[:danger]  = messages.join if messages.any?
+      flash[:info]    = "変更内容がありませんでした。" if flash.empty?
     end
 
     redirect_to user_url(date: params[:date])
@@ -61,7 +60,7 @@ class AttendancesController < ApplicationController
 
         # 管理者が直接内容を確定させたので、その日の保留中の申請は無効(却下)にする
         # (.includesでまとめ取得済みのデータを使うため、awaiting_decisionスコープ(where)ではなくメモリ内でフィルタする)
-        attendance.correction_requests.select { |r| r.pending? || r.unset? }.each { |request| request.update!(status: :rejected) }
+        attendance.correction_requests.select(&:pending?).each { |request| request.update!(status: :rejected) }
       end
     end
   end
@@ -69,6 +68,7 @@ class AttendancesController < ApplicationController
     # 一般ユーザーが勤怠変更を申請する経路
     def request_attendance_corrections
       applied_count = 0
+      withdrawn_count = 0
       dates_without_approver = []
       invalid_dates = []
       attendances = @user.attendances.includes(:correction_requests)
@@ -82,7 +82,8 @@ class AttendancesController < ApplicationController
         attendance_attributes = build_attendance_attributes(attendance, item)
         next unless attendance_changed?(attendance, attendance_attributes)
 
-        if item[:approver_id].blank?
+        # 取り下げ(実績に戻す)だけなら承認者は不要
+        if item[:approver_id].blank? && !same_as_actual?(attendance, attendance_attributes)
           dates_without_approver << attendance.worked_on
           next
         end
@@ -94,7 +95,14 @@ class AttendancesController < ApplicationController
           attendance.correction_requests.reload
           next unless attendance_changed?(attendance, attendance_attributes)
 
-          request = attendance.correction_requests.detect { |r| r.pending? || r.unset? } || attendance.correction_requests.build
+          # 実績と同じ値に戻された場合は、申請中の内容を取り下げる(なし=未処理に数えない)
+          if same_as_actual?(attendance, attendance_attributes)
+            attendance.correction_requests.detect(&:pending?)&.update!(status: :unset)
+            withdrawn_count += 1
+            next
+          end
+
+          request = attendance.correction_requests.detect(&:pending?) || attendance.correction_requests.build
           request.update!(
             user: @user,
             approver_id: item[:approver_id],
@@ -109,11 +117,11 @@ class AttendancesController < ApplicationController
         invalid_dates << attendance.worked_on
       end
 
-      [applied_count, dates_without_approver, invalid_dates]
+      [applied_count, withdrawn_count, dates_without_approver, invalid_dates] 
     end
 
     def attendance_changed?(attendance, attendance_attributes)
-      existing_request = attendance.correction_requests.detect { |r| r.pending? || r.unset? }
+      existing_request = attendance.correction_requests.detect(&:pending?)
 
       if existing_request
         baseline_started_at  = existing_request.requested_started_at
@@ -128,6 +136,13 @@ class AttendancesController < ApplicationController
       attendance_attributes[:started_at] != baseline_started_at ||
         attendance_attributes[:finished_at] != baseline_finished_at ||
         attendance_attributes[:note].to_s != baseline_note.to_s
+    end
+
+    # 入力が実績(Attendance)と同じ = 申請中の内容を取り下げて元に戻したい
+    def same_as_actual?(attendance, attendance_attributes)
+      attendance_attributes[:started_at] == attendance.started_at &&
+        attendance_attributes[:finished_at] == attendance.finished_at &&
+        attendance_attributes[:note].to_s == attendance.note.to_s
     end
 
     def attendances_params

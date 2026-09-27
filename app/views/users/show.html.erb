@@ -54,7 +54,7 @@
          elsif @monthly_approval.persisted? && @monthly_approval.pending?
            "#{@monthly_approval.approver.name}へ申請中"
          else
-           @monthly_approval.status_label
+           "未"
          end %>
     <thead>
       <tr>
@@ -142,13 +142,15 @@
         <td colspan="2">累計在社時間</td>
         <td colspan="<%= total_columns - tfoot_fixed_columns %>" rowspan="2"></td>
         <td rowspan="2">
-          <% unless readonly %>
+          <% if readonly || @monthly_approval.approved? %>
+            所属長承認  <%= monthly_approval_status_text %>
+          <% else %>
             <%= form_with model: @monthly_approval,
                   url: @monthly_approval.persisted? ? user_monthly_approval_path(@user, @monthly_approval) : user_monthly_approvals_path(@user),
                   local: true do |f| %>
               所属長承認  <%= monthly_approval_status_text %>
               <br>
-              <%= f.hidden_field :month, value: @first_day.beginning_of_month %>
+              <%= f.hidden_field :month, value: @first_day %>
               <%= f.collection_select :approver_id, @user.approver_candidates, :id, :name, { include_blank: "―"}, class: "form-control input-sm" %>
               <br>
               <%= f.submit "申請", class: "btn btn-primary btn-block" %>

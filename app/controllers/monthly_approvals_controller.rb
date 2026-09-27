@@ -20,6 +20,11 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def update
+    if @monthly_approval.approved?
+      flash[:danger] = "承認済みの月は再申請できません。"
+      return redirect_to user_url(@user, date: @monthly_approval.month)
+    end
+
     if @monthly_approval.update(monthly_approval_params.merge(status: :pending))
       flash[:success] = "所属長へ月次承認を再申請しました。"
     else
