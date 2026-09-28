@@ -20,6 +20,7 @@ class UsersController < ApplicationController
   def show
     @worked_sum = @attendances.where.not(started_at: nil).count
     @overtime_requests_by_date = @user.overtime_requests.includes(:approver).index_by(&:worked_on)
+    @monthly_approval = @user.monthly_approvals.find_or_initialize_by(month: @first_day)
     respond_to do |format|
       format.html
       format.json { render json: @user }
@@ -72,8 +73,11 @@ class UsersController < ApplicationController
 
 
   def destroy
-    @user.destroy
-    flash[:success] = "#{@user.name}のデータを削除しました。"
+    if @user.destroy
+      flash[:success] = "#{ERB::Util.html_escape(@user.name)}のデータを削除しました。"
+    else
+      flash[:danger] = "#{ERB::Util.html_escape(@user.name)}の削除に失敗しました。#{@user.errors.full_messages.join('、')}"
+    end
 
     respond_to do |format|
       format.html { redirect_to users_url }
@@ -96,9 +100,9 @@ class UsersController < ApplicationController
 
   def update_basic_info
     if @user.update(basic_info_params)
-      flash[:success] = "#{@user.name}の基本情報を更新しました。"
+      flash[:success] = "#{ERB::Util.html_escape(@user.name)}の基本情報を更新しました。"
     else
-      flash[:danger] = "#{@user.name}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
+      flash[:danger] = "#{ERB::Util.html_escape(@user.name)}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
     end
   
     respond_to do |format|
@@ -113,6 +117,7 @@ class UsersController < ApplicationController
     return if current_user?(@user) || current_user.admin?
     return if current_user.received_overtime_requests.exists?(user_id: @user.id)
     return if current_user.received_attendance_correction_requests.exists?(user_id: @user.id)
+    return if current_user.received_monthly_approvals.exists?(user_id: @user.id)
 
     flash[:danger] = "閲覧権限がありません。"
     redirect_to(root_url)

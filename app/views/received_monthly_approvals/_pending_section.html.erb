@@ -1,0 +1,46 @@
+<% if approvals_by_applicant.blank? %>
+  <p class="text-center text-muted">未処理の所属長承認申請はありません。</p>
+<% else %>
+  <%= form_with url: bulk_update_received_monthly_approvals_user_path(supervisor),
+                method: :patch, local: false,
+                id: "bulk_update_monthly_approval_form",
+                data: { action: "submit->modal#submit" } do %>
+    <% approvals_by_applicant.each do |applicant, monthly_approvals| %>
+      <h2 class="applicant-name">【<%= applicant.name %>からの1ヶ月分勤怠申請】</h2>
+      <table class="table table-bordered notice-table">
+        <thead>
+          <tr>
+            <th class="text-center">月</th>
+            <th class="text-center">指示者確認印</th>
+            <th class="text-center">変更</th>
+            <th class="text-center">勤怠を確認する</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% monthly_approvals.each do |monthly_approval| %>
+            <tr>
+              <td class="text-center"><%= monthly_approval.month.strftime("%-m月") %></td>
+              <td>
+                <%= select_tag "monthly_approvals[#{monthly_approval.id}][status]",
+                      options_for_select(MonthlyApproval.status_options, monthly_approval.status),
+                      class: "form-control" %>
+              </td>
+              <td class="text-center">
+                <%= check_box_tag "monthly_approvals[#{monthly_approval.id}][apply]", "1" %>
+              </td>
+              <td class="text-center">
+                <%= link_to "確認",
+                      user_path(applicant, date: monthly_approval.month, readonly: true),
+                      data: { turbo_frame: "_top" },
+                      class: "btn btn-primary btn-inset" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+  <% content_for :modal_footer do %>
+    <%= submit_tag "変更を送信する", form: "bulk_update_monthly_approval_form", class: "btn btn-primary btn-submit-large" %>
+  <% end %>
+<% end %>

@@ -1,0 +1,4 @@
+<%= render layout: 'shared/modal', locals: { title: @modal_title } do %>
+  <%= render 'received_monthly_approvals/pending_section',
+             approvals_by_applicant: @approvals_by_applicant, supervisor: @supervisor %>
+<% end %>

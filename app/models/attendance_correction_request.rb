@@ -1,48 +1,23 @@
 class AttendanceCorrectionRequest < ApplicationRecord
+  include ApproverValidatable
+  include StatusPresentable
+
   belongs_to :attendance
   belongs_to :user
   belongs_to :approver, class_name: "User"
 
-  enum status: { unset: 0, pending: 1, approved: 2, rejected: 3 }
-
-  scope :awaiting_decision, -> { where(status: [:pending, :unset]) }
-
   validates :attendance_id, uniqueness: { conditions: -> { awaiting_decision } }
   validates :note, length: { maximum: Attendance::NOTE_MAX_LENGTH }
-  validate :approver_must_be_another_supervisor
   validate :requested_started_at_and_finished_at_must_be_both_or_neither
   validate :requested_started_at_must_be_before_requested_finished_at
 
   after_update :apply_to_attendance, if: -> { saved_change_to_status? && approved? }
-
-  def editable?
-    pending? || rejected?
-  end
-
-  def decided?
-    approved? || rejected?
-  end
-
-  def status_label
-    I18n.t("activerecord.attributes.attendance_correction_request.statuses.#{status}")
-  end
-
-  def self.status_options
-    statuses.keys.map { |status_name| [I18n.t("activerecord.attributes.attendance_correction_request.statuses.#{status_name}"), status_name] }
-  end
 
   def result_label
     approved? ? "勤怠編集承認済" : "勤怠編集否認"
   end
 
   private
-
-    def approver_must_be_another_supervisor
-      return if approver.nil?
-
-      errors.add(:approver, "は上長を指定してください") unless approver.supervisor?
-      errors.add(:approver_id, "には自分自身を指定できません") if approver_id.present? && approver_id == user_id
-    end
 
     def requested_started_at_and_finished_at_must_be_both_or_neither
       return if requested_started_at.present? == requested_finished_at.present?
@@ -58,6 +33,7 @@ class AttendanceCorrectionRequest < ApplicationRecord
 
     # 承認された瞬間に、実際のAttendanceへ反映します。(16行目のafter_updateから呼ばれます)
     def apply_to_attendance
+      attendance.lock!
       attendance.update!(started_at: requested_started_at, finished_at: requested_finished_at, note: note)
     end
 end

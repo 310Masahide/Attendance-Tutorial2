@@ -52,3 +52,20 @@ $notice-danger-color: #d9534f; // Bootstrap 3 の danger 相当
 .notice-table th {
   white-space: nowrap;
 }
+
+/* 文字の左右に一文字分ずつ余白を広げたボタン(所属長承認のモーダルなどで使用) */
+.btn-inset {
+  display: inline-block;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+/* 「変更を送信する」ボタンを1.5倍の大きさにして中央配置する */
+.btn-submit-large {
+  display: block;
+  margin: 0 auto;
+  padding-left: 2em;
+  padding-right: 2em;
+  transform: scale(1.5);
+}
+

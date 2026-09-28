@@ -9,7 +9,7 @@ ja:
         approver: "指示者"
         approver_id: "指示者"
         statuses:
-          unset: "未定"
+          unset: "なし"
           pending: "残業申請中"
           approved: "残業承認済"
           rejected: "残業否認"
@@ -17,6 +17,15 @@ ja:
         requested_started_at: "修正後の出社時間"
         requested_finished_at: "修正後の退社時間"
         note: "備考"
+        approver: "指示者"
+        approver_id: "指示者"
+        statuses:
+          unset: "なし"
+          pending: "申請中"
+          approved: "承認"
+          rejected: "否認"
+      monthly_approval:
+        month: "対象月"
         approver: "指示者"
         approver_id: "指示者"
         statuses:

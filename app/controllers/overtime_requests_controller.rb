@@ -1,4 +1,6 @@
 class OvertimeRequestsController < ApplicationController
+  include AdminOrCorrectUserScoped
+
   before_action :logged_in_user
   before_action :set_user
   before_action :admin_or_correct_user
@@ -33,7 +35,7 @@ class OvertimeRequestsController < ApplicationController
     end
 
     # 再申請の意味も兼ねるため、保存できたら必ず「申請中」に戻す
-    if @overtime_request.update(overtime_request_params.merge(status: :pending, applicant_confirmed: false))
+    if @overtime_request.update(overtime_request_params.merge(status: :pending))
       flash.now[:success] = "残業申請を更新しました。"
     else
       flash.now[:danger] = "残業申請の更新に失敗しました。"
@@ -54,13 +56,6 @@ class OvertimeRequestsController < ApplicationController
 
     def set_user
       @user = User.find(params[:user_id])
-    end
-
-    def admin_or_correct_user
-      unless current_user?(@user) || current_user.admin?
-        flash[:danger] = "権限がありません。"
-        redirect_to(root_url)
-      end
     end
 
     def overtime_request_params
