@@ -1,0 +1,4 @@
+<%= render layout: 'shared/modal', locals: { title: '【勤怠変更申請のお知らせ】' } do %>
+  <%= render 'received_attendance_correction_requests/pending_section',
+             requests_by_applicant: @requests_by_applicant, supervisor: @supervisor %>
+<% end %>

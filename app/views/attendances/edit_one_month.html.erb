@@ -2,36 +2,70 @@
 <%= form_with(model: @user, url: attendances_update_one_month_user_path(date: @first_day), local: true, method: :patch) do |f| %>
   <div>
     <h1>勤怠編集画面</h1>
+    <% shows_approver_column = !current_user.admin? %>
     <table class="table table-bordered table-condensed table-hover" id="table-attendances">
       <thead>
         <tr>
           <th>日付</th>
           <th>曜日</th>
-          <th>出勤時間</th>
-          <th>退勤時間</th>
+          <th>出社</th>
+          <th>退社</th>
+          <th>翌日</th>
           <th>在社時間</th>
           <th>備考</th>
+          <% if shows_approver_column %>
+            <th>指示者確認印</th>
+          <% end %>
         </tr>
       </thead>
       <tbody>
         <% @attendances.each do |day| %>
           <%= f.fields_for "attendances[]", day do |attendance| %>
+            <% pending_request  = day.latest_correction_request if !current_user.admin? && day.latest_correction_request&.editable? %>
+            <% display_started  = pending_request&.requested_started_at  || day.started_at %>
+            <% display_finished = pending_request&.requested_finished_at || day.finished_at %>
             <tr>
               <td><%= l(day.worked_on, format: :short) %></td>
               <td><%= $days_of_the_week[day.worked_on.wday] %></td>
-              <% if !current_user.admin? && (Date.current < day.worked_on) %> 
-                <td><%= attendance.time_field :started_at, class: "form-control" %></td>
-                <td><%= attendance.time_field :finished_at, class: "form-control" %></td>
-              <% else %>
-                <td><%= attendance.time_field :started_at, class: "form-control" %></td>
-                <td><%= attendance.time_field :finished_at, class: "form-control" %></td>
-              <% end %>
               <td>
-                <% if day.started_at.present? && day.finished_at.present? %>
-                  <%= working_times(day.started_at, day.finished_at) %>
+                <span class="time-select">
+                  <%= attendance.select :started_at_hour, hour_options, 
+                        { include_blank: true, selected: display_started&.hour },
+                        class: "form-control input-sm" %>
+                  :
+                  <%= attendance.select :started_at_minute, minute_options, 
+                        { include_blank: true, selected: display_started&.min },
+                        class: "form-control input-sm" %>
+                </span>
+              </td>
+              <td>
+                <span class="time-select">
+                  <%= attendance.select :finished_at_hour, hour_options,
+                        { include_blank: true, selected: display_finished&.hour },
+                        class: "form-control input-sm" %>
+                  :
+                  <%= attendance.select :finished_at_minute, minute_options, 
+                        { include_blank: true, selected: display_finished&.min },
+                        class: "form-control input-sm" %>
+                </span>
+              </td>
+              <% finishes_next_day = display_finished.present? && display_finished.to_date > day.worked_on %>
+              <td>
+                <%= check_box_tag "user[attendances][#{day.id}][finishes_next_day]", "1", finishes_next_day %>
+              </td>
+              <td>
+                <% if display_started.present? && display_finished.present? %>
+                  <%= working_times(display_started, display_finished) %>
                 <% end %>
               </td>
-              <td><%= attendance.text_field :note, class: "form-control" %></td>
+              <td><%= attendance.text_field :note, value: (pending_request&.note || day.note), maxlength: Attendance::NOTE_MAX_LENGTH, class: "form-control" %></td>
+              <% if shows_approver_column %>
+                <td>
+                  <%= select_tag "user[attendances][#{day.id}][approver_id]",
+                        options_from_collection_for_select(@approvers, :id, :name, day.latest_correction_request&.approver_id),
+                        include_blank: "―", class: "form-control input-sm" %>
+                </td>
+              <% end %>
             </tr>
           <% end %>
         <% end %>
@@ -40,7 +74,7 @@
   </div>
 
   <div class="center">
-    <%= f.submit "まとめて更新", class: "btn btn-lg btn-primary" %>
-    <%= link_to "キャンセル", user_path(date: @first_day), class: "btn btn-lg btn-default" %>
+    <%= link_to "キャンセル", user_path(date: @first_day), class: "btn btn-lg btn-primary" %>
+    <%= f.submit "編集を保存する", class: "btn btn-lg btn-primary" %>
   </div>
 <% end %>

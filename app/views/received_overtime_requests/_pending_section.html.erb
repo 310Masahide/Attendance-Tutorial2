@@ -4,7 +4,7 @@
   <%= form_with url: bulk_update_received_overtime_requests_user_path(supervisor),
                 method: :patch, local: false,
                 id: "bulk_update_form",
-                data: { action: "submit->overtime-request#submit" } do %>
+                data: { action: "submit->modal#submit" } do %>
     <% requests_by_applicant.each do |applicant, overtime_requests| %>
       <h2 class="applicant-name"><%= applicant.name %> さんからの申請</h2>
       <table class="table table-bordered notice-table">

@@ -4,7 +4,7 @@
               url: @overtime_request.persisted? ? user_overtime_request_path(@user, @overtime_request) : user_overtime_requests_path(@user),
               local: false,
               id: "overtime_request_form",
-              data: { action: "submit->overtime-request#submit" }) do |f| %>
+              data: { action: "submit->modal#submit" }) do |f| %>
   <table class="table table-bordered">
     <thead>
       <tr>

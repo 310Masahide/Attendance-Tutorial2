@@ -1,4 +1,4 @@
-class ReceivedOvertimeRequestsController < ApplicationController
+class ReceivedAttendanceCorrectionRequestsController < ApplicationController
   before_action :logged_in_user
   before_action :set_supervisor
   before_action :correct_supervisor
@@ -21,7 +21,7 @@ class ReceivedOvertimeRequestsController < ApplicationController
 
   # 「変更」にチェックが入っていて、かつ選択肢に無いステータスを弾いた行だけを返す
   def submitted_changes
-    submitted = params[:overtime_requests] || {}
+    submitted = params[:attendance_correction_requests] || {}
 
     submitted.to_unsafe_h.select do |_id, attributes|
       attributes["apply"] == "1" && SELECTABLE_STATUSES.include?(attributes["status"])
@@ -30,20 +30,21 @@ class ReceivedOvertimeRequestsController < ApplicationController
 
   def apply_status_changes(changes)
     # 自分宛ての申請だけを対象にすることで、他人の申請を書き換えられないようにする
-    target_requests = @supervisor.received_overtime_requests.where(id: changes.keys)
+    target_requests = @supervisor.received_attendance_correction_requests.where(id: changes.keys)
 
-    OvertimeRequest.transaction do
-      target_requests.each do |overtime_request|
-        overtime_request.update!(status: changes[overtime_request.id.to_s]["status"])
+    AttendanceCorrectionRequest.transaction do
+      target_requests.each do |request|
+        request.update!(status: changes[request.id.to_s]["status"])
       end
     end
   end
 
   def pending_requests_by_applicant
-    @supervisor.received_overtime_requests
+    @supervisor.received_attendance_correction_requests
                .where(status: %i[pending unset])
-               .includes(:user)
-               .order(:worked_on)
+               .includes(:attendance, :user)
+               .joins(:attendance)
+               .order("attendances.worked_on")
                .group_by(&:user)
   end
 
