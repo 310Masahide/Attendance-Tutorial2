@@ -36,6 +36,8 @@
 <% unless readonly %>
   <div class="btn-users-show">
     <%= link_to "勤怠を編集", attendances_edit_one_month_user_path(date: @first_day), class: "btn btn-primary" %>
+    <%= link_to "CSVを出力", user_path(@user, date: @first_day, format: :csv),
+          class: "btn btn-primary", data: { turbo: false } %>
   </div>
 <% end %>
 

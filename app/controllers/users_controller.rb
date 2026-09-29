@@ -24,9 +24,13 @@ class UsersController < ApplicationController
     respond_to do |format|
       format.html
       format.json { render json: @user }
+      format.csv do
+        send_data @attendances.to_csv,
+                  filename: "#{@user.name}_#{@first_day.strftime('%Y年%m月')}_勤怠.csv",
+                  type: :csv
+      end
     end
   end
-
 
   def new
     @user = User.new
