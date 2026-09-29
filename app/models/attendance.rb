@@ -14,13 +14,10 @@ class Attendance < ApplicationRecord
   # 勤怠(承認済みの実績)をCSVにします。
   # 勤怠変更の申請中(未承認)の値はAttendanceに反映されていないため含まれません。
   def self.to_csv
-    bom = "\uFEFF" # Excelで開いたときに文字化けしないように付けます
-    bom + CSV.generate do |csv|
+    # 先頭のBOMは、Excelで開いたときに文字化けしないように付けます
+    CSV.generate(+"\uFEFF") do |csv|
       csv << CSV_HEADERS
-      includes(:correction_requests).each do |attendance|
-        # 編集承認依頼中(未承認)の日は出力しない
-        next if attendance.correction_requests.any?(&:pending?)
-
+      all.each do |attendance|
         csv << [
           I18n.l(attendance.worked_on, format: "%Y/%m/%d"),
           I18n.l(attendance.worked_on, format: "%a"),

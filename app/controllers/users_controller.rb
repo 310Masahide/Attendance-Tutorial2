@@ -18,17 +18,14 @@ class UsersController < ApplicationController
 
 
   def show
+    return send_attendances_csv if request.format.csv?
+
     @worked_sum = @attendances.where.not(started_at: nil).count
     @overtime_requests_by_date = @user.overtime_requests.includes(:approver).index_by(&:worked_on)
     @monthly_approval = @user.monthly_approvals.find_or_initialize_by(month: @first_day)
     respond_to do |format|
       format.html
       format.json { render json: @user }
-      format.csv do
-        send_data @attendances.to_csv,
-                  filename: "#{@user.name}_#{@first_day.strftime('%Y年%m月')}_勤怠.csv",
-                  type: :csv
-      end
     end
   end
 
@@ -116,6 +113,12 @@ class UsersController < ApplicationController
   end
 
   private
+
+  def send_attendances_csv
+    send_data @attendances.to_csv,
+              filename: "#{@user.name}_#{@first_day.strftime('%Y年%m月')}_勤怠.csv",
+              type: :csv
+  end
 
   def viewable_user
     return if current_user?(@user) || current_user.admin?
