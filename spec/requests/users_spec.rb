@@ -104,17 +104,65 @@ RSpec.describe "Users", type: :request do
       end
     end
   end
+
+  describe 'GET show (CSV形式)' do
+    let(:user)  { create(:user) }
+    let(:month) { Date.new(2026, 9, 1) }
+    let!(:attendances) do
+      (month..month.end_of_month).map { |day| create(:attendance, user: user, worked_on: day) }
+    end
+    let(:csv_rows) { CSV.parse(response.body.force_encoding("UTF-8").delete_prefix("\uFEFF")) }
+
+    before do
+      post login_path, params: { session: { email: user.email, password: user.password } }
+    end
+
+    it "表示月の勤怠をCSVでダウンロードできる" do
+      get user_path(user, format: :csv, date: month)
+      expect(response.media_type).to eq "text/csv"
+      expect(response.headers["Content-Disposition"]).to include "attachment"
+      expect(csv_rows.first).to eq %w[日付 曜日 出社時間 退社時間 備考]
+      expect(csv_rows.size).to eq 1 + 30
+    end
+
+    it "申請中の値は出力せず、承認済みの実績を出力する" do
+      attendance = attendances.first
+      attendance.update!(started_at: Time.zone.local(2026, 9, 1, 9, 0), finished_at: Time.zone.local(2026, 9, 1, 18, 0))
+      create(:attendance_correction_request, attendance: attendance,
+             requested_started_at: Time.zone.local(2026, 9, 1, 10, 30),
+             requested_finished_at: Time.zone.local(2026, 9, 1, 18, 0))
+
+      get user_path(user, format: :csv, date: month)
+      expect(csv_rows[1]).to eq ["2026/09/01", "火", "09:00", "18:00", nil]
+    end
+
+    it "日をまたぐ退社は「翌」を付ける" do
+      attendances.second.update!(started_at: Time.zone.local(2026, 9, 2, 20, 0), finished_at: Time.zone.local(2026, 9, 3, 2, 0))
+      get user_path(user, format: :csv, date: month)
+      expect(csv_rows[2]).to eq ["2026/09/02", "水", "20:00", "翌02:00", nil]
+    end
+
+    it "=で始まる備考に ' を付ける" do
+      attendances.first.update!(note: "=1+1")
+      get user_path(user, format: :csv, date: month)
+      expect(csv_rows[1][4]).to eq "'=1+1"
+    end
+
+    it "他人のCSVはリダイレクトされる" do
+      other = create(:user)
+      get user_path(other, format: :csv, date: month)
+      expect(response).to redirect_to(root_url)
+    end
+  end
   
   describe 'GET new' do
     before do
       get new_user_path, as: :json
     end
 
-
     it "200 HTTPレスポンスを返す" do
       expect(response.status).to eq 200
     end
-
 
     it '新しいユーザーインスタンスが生成される' do
       json_response = JSON.parse(response.body)
