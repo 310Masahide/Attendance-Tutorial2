@@ -1,9 +1,9 @@
 class AttendancesController < ApplicationController
   include AdminOrCorrectUserScoped
 
-  before_action :set_user, only: [:edit_one_month, :update_one_month]
-  before_action :logged_in_user, only: [:edit_one_month, :update_one_month]
-  before_action :admin_or_correct_user, only: [:edit_one_month, :update_one_month]
+  before_action :set_user, only: [:edit_one_month, :update_one_month, :correction_logs]
+  before_action :logged_in_user, only: [:edit_one_month, :update_one_month, :correction_logs]
+  before_action :admin_or_correct_user, only: [:edit_one_month, :update_one_month, :correction_logs]
   before_action :set_one_month, only: :edit_one_month
   before_action :set_approvers, only: :edit_one_month
 
@@ -43,6 +43,20 @@ class AttendancesController < ApplicationController
   rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked
     flash[:danger] = "他の操作と競合したため、更新できませんでした。もう一度お試しください。"
     redirect_to attendances_edit_one_month_user_url(date: params[:date])
+  end
+
+  # 勤怠修正ログ(承認済)をモーダルで表示します
+  def correction_logs
+    return redirect_to(user_url(@user)) unless turbo_frame_request?
+
+    all_logs = @user.attendance_correction_requests.correction_logs
+    # 年のプルダウンには、ログに出てくる年だけを新しい順に出します
+    @years = all_logs.map { |log| log.worked_on.year }.uniq.sort.reverse
+    # 年・月は、それぞれ選ばれているときだけ絞り込みます
+    @correction_logs = all_logs.select do |log|
+      (params[:year].blank?  || log.worked_on.year  == params[:year].to_i) &&
+        (params[:month].blank? || log.worked_on.month == params[:month].to_i)
+    end
   end
 
   private

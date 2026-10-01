@@ -38,6 +38,10 @@
     <%= link_to "勤怠を編集", attendances_edit_one_month_user_path(date: @first_day), class: "btn btn-primary" %>
     <%= link_to "CSVを出力", user_path(@user, date: @first_day, format: :csv),
           class: "btn btn-primary", data: { turbo: false } %>
+    <div class="btn-correction-logs">
+      <%= link_to "勤怠修正ログ（承認済）", attendances_correction_logs_user_path(@user),
+            class: "btn btn-primary", data: { turbo_frame: 'modal' } %>
+    </div>
   </div>
 <% end %>
 

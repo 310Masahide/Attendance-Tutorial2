@@ -60,4 +60,49 @@ RSpec.describe AttendanceCorrectionRequest, type: :model do
       expect(attendance.finished_at).to eq Time.zone.local(2026, 1, 1, 17, 0)
     end
   end
+
+  describe ".correction_logs" do
+    let(:attendance) do
+      create(:attendance, worked_on: Date.new(2026, 2, 1),
+                          started_at: Time.zone.local(2026, 2, 1, 10, 0),
+                          finished_at: Time.zone.local(2026, 2, 1, 18, 0))
+    end
+
+    # 申請して承認する(承認時に変更前の時刻が記録される)
+    def approve_change(attendance, started_hour, finished_hour)
+      request = create(:attendance_correction_request, attendance: attendance,
+                       requested_started_at: Time.zone.local(2026, 2, 1, started_hour, 0),
+                       requested_finished_at: Time.zone.local(2026, 2, 1, finished_hour, 0))
+      request.update!(status: :approved)
+    end
+
+    it "同じ日を複数回変更した場合、最初の変更前 ⇨ 最後の変更後 の1行にまとめる" do
+      approve_change(attendance, 11, 19)
+      approve_change(attendance, 12, 20)
+      approve_change(attendance, 13, 21)
+
+      logs = AttendanceCorrectionRequest.correction_logs
+      expect(logs.size).to eq 1
+      expect(logs.first.before_started_at).to eq Time.zone.local(2026, 2, 1, 10, 0)
+      expect(logs.first.before_finished_at).to eq Time.zone.local(2026, 2, 1, 18, 0)
+      expect(logs.first.after_started_at).to eq Time.zone.local(2026, 2, 1, 13, 0)
+      expect(logs.first.after_finished_at).to eq Time.zone.local(2026, 2, 1, 21, 0)
+    end
+
+    it "承認されていない申請はログに含めない" do
+      create(:attendance_correction_request, attendance: attendance)   # 申請中のまま
+      expect(AttendanceCorrectionRequest.correction_logs).to be_empty
+    end
+
+        it "承認日は最後に承認した日時になる" do
+      travel_to Time.zone.local(2026, 2, 3, 10, 0) do
+        approve_change(attendance, 11, 19)
+      end
+      travel_to Time.zone.local(2026, 2, 5, 15, 0) do
+        approve_change(attendance, 12, 20)
+      end
+
+      expect(AttendanceCorrectionRequest.correction_logs.first.approved_at).to eq Time.zone.local(2026, 2, 5, 15, 0)
+    end
+  end
 end
