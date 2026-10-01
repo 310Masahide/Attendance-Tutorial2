@@ -20,7 +20,7 @@ class AttendanceCorrectionRequest < ApplicationRecord
   CorrectionLog = Struct.new(:worked_on, :before_started_at, :before_finished_at,
                              :after_started_at, :after_finished_at, :approver, :approved_at, keyword_init: true)
 
-  # 勤怠修正ログ(承認済み)
+  # 勤怠修正ログ(承認済)
   # 同じ日を複数回変更している場合は、一番最初に申請した変更前 ⇨ 一番最後に申請した変更後 にまとめます
   def self.correction_logs
     approved.includes(:attendance, :approver).order(:created_at)
@@ -53,8 +53,8 @@ class AttendanceCorrectionRequest < ApplicationRecord
       errors.add(:requested_started_at, "より早い退社時間は無効です") if requested_started_at > requested_finished_at
     end
 
-    # (変更前)と承認日を記録しておきます。(16行目のafter_updateから呼ばれます)
-    # 勤怠修正ログのため、反映する直前の時刻(変更前)を記録しておきます
+    # 承認された瞬間に、実際のAttendanceへ反映します。(after_updateから呼ばれます)
+    # 勤怠修正ログのため、反映する直前の時刻(変更前)と承認日を記録しておきます
     def apply_to_attendance
       attendance.lock!
       update_columns(original_started_at: attendance.started_at,
