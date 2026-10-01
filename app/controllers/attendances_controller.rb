@@ -52,11 +52,7 @@ class AttendancesController < ApplicationController
     all_logs = @user.attendance_correction_requests.correction_logs
     # 年のプルダウンには、ログに出てくる年だけを新しい順に出します
     @years = all_logs.map { |log| log.worked_on.year }.uniq.sort.reverse
-    # 年・月は、それぞれ選ばれているときだけ絞り込みます
-    @correction_logs = all_logs.select do |log|
-      (params[:year].blank?  || log.worked_on.year  == params[:year].to_i) &&
-        (params[:month].blank? || log.worked_on.month == params[:month].to_i)
-    end
+    @correction_logs = all_logs.select { |log| in_selected_period?(log.worked_on) }
   end
 
   private
@@ -185,5 +181,11 @@ class AttendancesController < ApplicationController
 
     def set_approvers
       @approvers = @user.approver_candidates
+    end
+
+    # 年・月のプルダウンで選ばれた期間か(選ばれていない方は条件にしない)
+    def in_selected_period?(worked_on)
+      (params[:year].blank? || worked_on.year == params[:year].to_i) &&
+        (params[:month].blank? || worked_on.month == params[:month].to_i)
     end
 end

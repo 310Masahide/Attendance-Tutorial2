@@ -31,9 +31,14 @@ class Attendance < ApplicationRecord
 
   # 退社が翌日の場合は「翌」を付けます(例: 翌02:00)
   def finished_at_for_csv
-    return if finished_at.nil?
+    Attendance.clock_time_label(finished_at, worked_on)
+  end
 
-    "#{'翌' if finished_at.to_date > worked_on}#{finished_at.strftime('%H:%M')}"
+  # 時刻を「09:00」の形にします。勤務日より後の日付なら「翌」を付けます(例: 翌02:00)
+  def self.clock_time_label(time, worked_on)
+    return if time.nil?
+
+    "#{'翌' if time.to_date > worked_on}#{time.strftime('%H:%M')}"
   end
 
   # Excelで数式として実行されないよう、= + - @ などで始まる値の先頭に ' を付けます(CSVインジェクション対策)

@@ -1,15 +1,16 @@
 <%= render layout: 'shared/modal', locals: { title: '勤怠ログ' } do %>
   <div class="correction-logs-search">
     <%= link_to "リセット", attendances_correction_logs_user_path(@user), class: "btn btn-default btn-sm" %>
-    <%= form_with url: attendances_correction_logs_user_path(@user), method: :get do %>
+    <%= form_with url: attendances_correction_logs_user_path(@user), method: :get,
+          data: { controller: "auto-submit" } do %>
       <%= select_tag :year,
             options_for_select(@years.map { |year| ["#{year}年", year] }, params[:year]),
             include_blank: "年", class: "form-control input-sm",
-            onchange: "this.form.requestSubmit()" %>
+            data: { action: "change->auto-submit#submit" } %>
       <%= select_tag :month,
             options_for_select((1..12).map { |month| ["#{month}月", month] }, params[:month]),
             include_blank: "月", class: "form-control input-sm",
-            onchange: "this.form.requestSubmit()" %>
+            data: { action: "change->auto-submit#submit" } %>
     <% end %>
   </div>
 

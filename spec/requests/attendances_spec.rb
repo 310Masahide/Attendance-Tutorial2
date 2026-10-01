@@ -1,4 +1,4 @@
-require 'rails_helper'
+require "rails_helper"
 
 RSpec.describe "Attendances", type: :request do
   describe "PATCH /users/:user_id/attendances/update_one_month" do
@@ -56,12 +56,11 @@ RSpec.describe "Attendances", type: :request do
                                              started_at: date.in_time_zone.change(hour: 9),
                                              finished_at: date.in_time_zone.change(hour: 18))
             create(:attendance_correction_request, attendance: attendance, approver: approver,
-                   requested_started_at: date.in_time_zone.change(hour: 10),
-                   requested_finished_at: date.in_time_zone.change(hour: 19)).update!(status: :approved)
+                                                   requested_started_at: date.in_time_zone.change(hour: 10),
+                                                   requested_finished_at: date.in_time_zone.change(hour: 19)).update!(status: :approved)
           end
         end
       end
-
 
       it "年だけを選ぶと、その年のログだけを表示する" do
         get attendances_correction_logs_user_path(user, year: 2026), headers: { "Turbo-Frame" => "modal" }
