@@ -61,3 +61,18 @@
   margin: 15px 0;
   width: 30%;
 }
+
+/* 勤怠ログの検索 */
+
+.correction-logs-search {
+  margin-bottom: 10px;
+
+  form {
+    margin-top: 5px;
+  }
+
+  select {
+    width: auto;
+    margin-bottom: 5px;
+  }
+}

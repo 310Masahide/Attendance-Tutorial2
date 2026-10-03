@@ -1,0 +1,48 @@
+<%= render layout: 'shared/modal', locals: { title: '勤怠ログ' } do %>
+  <div class="correction-logs-search">
+    <%= link_to "リセット", attendances_correction_logs_user_path(@user), class: "btn btn-default btn-sm" %>
+    <%= form_with url: attendances_correction_logs_user_path(@user), method: :get,
+          data: { controller: "auto-submit" } do %>
+      <%= select_tag :year,
+            options_for_select(@years.map { |year| ["#{year}年", year] }, params[:year]),
+            include_blank: "年", class: "form-control input-sm",
+            data: { action: "change->auto-submit#submit" } %>
+      <%= select_tag :month,
+            options_for_select((1..12).map { |month| ["#{month}月", month] }, params[:month]),
+            include_blank: "月", class: "form-control input-sm",
+            data: { action: "change->auto-submit#submit" } %>
+    <% end %>
+  </div>
+
+  <% if @correction_logs.empty? %>
+    <p class="text-center text-muted">該当する勤怠ログはありません。</p>
+  <% else %>
+    <table class="table table-bordered notice-table">
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>変更前出社時間</th>
+          <th>変更前退社時間</th>
+          <th>変更後出社時間</th>
+          <th>変更後退社時間</th>
+          <th>承認者</th>
+          <th>承認日</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @correction_logs.each do |log| %>
+          <tr>
+            <td><%= l(log.worked_on, format: "%Y/%m/%d") %></td>
+            <td><%= correction_log_time(log.before_started_at, log.worked_on) %></td>
+            <td><%= correction_log_time(log.before_finished_at, log.worked_on) %></td>
+            <td><%= correction_log_time(log.after_started_at, log.worked_on) %></td>
+            <td><%= correction_log_time(log.after_finished_at, log.worked_on) %></td>
+            <td><%= log.approver.name %></td>
+            <td><%= log.approved_at&.strftime("%Y/%m/%d") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>
+

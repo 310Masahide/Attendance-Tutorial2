@@ -2,6 +2,9 @@ class AttendanceCorrectionRequest < ApplicationRecord
   include ApproverValidatable
   include StatusPresentable
 
+  CorrectionLog = Struct.new(:worked_on, :before_started_at, :before_finished_at,
+                             :after_started_at, :after_finished_at, :approver, :approved_at, keyword_init: true)
+
   belongs_to :attendance
   belongs_to :user
   belongs_to :approver, class_name: "User"
@@ -11,11 +14,34 @@ class AttendanceCorrectionRequest < ApplicationRecord
   validate :requested_started_at_and_finished_at_must_be_both_or_neither
   validate :requested_started_at_must_be_before_requested_finished_at
 
-  after_update :apply_to_attendance, if: -> { saved_change_to_status? && approved? }
+  before_update :record_original_times, if: -> { will_save_change_to_status? && approved? }
+  after_update  :apply_to_attendance,   if: -> { saved_change_to_status? && approved? }
 
   def result_label
     approved? ? "勤怠編集承認済" : "勤怠編集否認"
   end
+
+  # 勤怠修正ログ(承認済)
+  # 同じ日を複数回変更している場合は、一番最初に申請した変更前 ⇨ 一番最後に申請した変更後 にまとめます
+  def self.correction_logs
+    approved.includes(:attendance, :approver).order(:created_at)
+            .group_by(&:attendance)
+            .map { |attendance, requests| build_correction_log(attendance, requests) }
+            .sort_by(&:worked_on)
+  end
+
+  def self.build_correction_log(attendance, requests)
+    first_request = requests.first
+    last_request  = requests.last
+    CorrectionLog.new(worked_on:          attendance.worked_on,
+                      before_started_at:  first_request.original_started_at,
+                      before_finished_at: first_request.original_finished_at,
+                      after_started_at:   last_request.requested_started_at,
+                      after_finished_at:  last_request.requested_finished_at,
+                      approver:           last_request.approver,
+                      approved_at:        last_request.approved_at)
+  end
+  private_class_method :build_correction_log
 
   private
 
@@ -31,9 +57,16 @@ class AttendanceCorrectionRequest < ApplicationRecord
       errors.add(:requested_started_at, "より早い退社時間は無効です") if requested_started_at > requested_finished_at
     end
 
-    # 承認された瞬間に、実際のAttendanceへ反映します。(16行目のafter_updateから呼ばれます)
-    def apply_to_attendance
+    # 勤怠修正ログのため、承認を保存する直前に、反映前の時刻(変更前)と承認日を記録します(before_updateから呼ばれます)
+    def record_original_times
       attendance.lock!
+      self.original_started_at  = attendance.started_at
+      self.original_finished_at = attendance.finished_at
+      self.approved_at          = Time.current
+    end
+
+    # 承認された瞬間に、実際のAttendanceへ反映します。(after_updateから呼ばれます)
+    def apply_to_attendance
       attendance.update!(started_at: requested_started_at, finished_at: requested_finished_at, note: note)
     end
 end

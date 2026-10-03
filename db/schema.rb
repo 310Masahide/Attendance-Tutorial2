@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_26_010317) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_01_050517) do
   create_table "attendance_correction_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "user_id", null: false
@@ -21,6 +21,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_26_010317) do
     t.integer "status", default: 1, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "original_started_at"
+    t.datetime "original_finished_at"
+    t.datetime "approved_at"
     t.index ["approver_id"], name: "index_attendance_correction_requests_on_approver_id"
     t.index ["attendance_id"], name: "index_attendance_correction_requests_on_attendance_id"
     t.index ["user_id"], name: "index_attendance_correction_requests_on_user_id"
