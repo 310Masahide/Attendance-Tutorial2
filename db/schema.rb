@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_01_050517) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_04_140634) do
   create_table "attendance_correction_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "user_id", null: false
@@ -52,6 +52,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_01_050517) do
     t.index ["user_id"], name: "index_monthly_approvals_on_user_id"
   end
 
+  create_table "offices", charset: "utf8mb4", force: :cascade do |t|
+    t.integer "office_number", null: false
+    t.string "name", null: false
+    t.string "office_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_offices_on_name", unique: true
+    t.index ["office_number"], name: "index_offices_on_office_number", unique: true
+  end
+
   create_table "overtime_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.date "worked_on"
@@ -82,7 +92,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_01_050517) do
     t.boolean "supervisor", default: false
     t.time "designated_work_start_time", default: "2000-01-01 00:00:00", null: false
     t.time "designated_work_end_time", default: "2000-01-01 09:00:00", null: false
+    t.string "employee_number"
+    t.string "uid"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["employee_number"], name: "index_users_on_employee_number", unique: true
+    t.index ["uid"], name: "index_users_on_uid", unique: true
   end
 
   add_foreign_key "attendance_correction_requests", "attendances"

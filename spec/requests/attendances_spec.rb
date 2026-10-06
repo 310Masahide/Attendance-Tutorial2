@@ -90,4 +90,28 @@ RSpec.describe "Attendances", type: :request do
       end
     end
   end
+
+    describe "管理者と勤怠の編集" do
+    let(:admin) { create(:user, admin: true) }
+    let(:user)  { create(:user) }
+
+    before do
+      post login_path, params: { session: { email: admin.email, password: admin.password } }
+    end
+
+    it "勤怠編集画面を表示できない" do
+      get attendances_edit_one_month_user_path(user)
+      expect(response).to redirect_to(users_url)
+    end
+
+    it "勤怠を更新できない" do
+      attendance = create(:attendance, user: user)
+      patch attendances_update_one_month_user_path(user), params: {
+        user: { attendances: { attendance.id.to_s => { started_at_hour: "9", started_at_minute: "0",
+                                                       finished_at_hour: "18", finished_at_minute: "0" } } }
+      }
+      expect(response).to redirect_to(users_url)
+      expect(attendance.reload.started_at).to be_nil
+    end
+  end
 end

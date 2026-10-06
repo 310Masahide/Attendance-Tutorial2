@@ -1,0 +1,17 @@
+<%= form_with model: office do |f| %>
+  <%= render 'shared/error_messages', object: office %>
+
+  <%= f.label :office_number %>
+  <%= f.number_field :office_number, min: 1, class: "form-control" %>
+
+  <%= f.label :name %>
+  <%= f.text_field :name, class: "form-control" %>
+
+  <%= f.label :office_type %>
+  <%= f.select :office_type, Office::OFFICE_TYPES, { include_blank: "選択してください" }, class: "form-control" %>
+
+  <div class="center">
+    <%= f.submit button_text, class: "btn btn-primary" %>
+    <%= link_to "戻る", offices_path, class: "btn btn-default" %>
+  </div>
+<% end %>

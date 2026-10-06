@@ -1,19 +1,30 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [:show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
-  before_action :logged_in_user, only: [:index, :show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
+  before_action :logged_in_user, only: [:index, :show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info,
+                                        :import, :working]
   before_action :correct_user, only: [:edit, :update]
-  before_action :admin_user, only: [:destroy, :edit_basic_info, :update_basic_info]
+  before_action :admin_user, only: [:index, :destroy, :edit_basic_info, :update_basic_info, :import, :working]
+  before_action :reject_self, only: [:destroy, :edit_basic_info, :update_basic_info]
+  before_action :reject_admin, only: :show
   before_action :viewable_user, only: :show
   before_action :set_one_month, only: :show
 
 
   def index
-    @users = User.paginate(page: params[:page])
-
+    # ログイン中の自分は一覧に出さない
+    @users = User.where.not(id: current_user.id).order(:id).paginate(page: params[:page])
     respond_to do |format|
       format.html
       format.json { render json: @users }
     end
+  end
+
+  # 出勤社員一覧: 今日出社して、まだ退社していないユーザー
+  def working
+    @working_attendances = Attendance.includes(:user)
+                                     .where(worked_on: Date.current, finished_at: nil)
+                                     .where.not(started_at: nil)
+                                     .order(:started_at)
   end
 
 
@@ -86,6 +97,21 @@ class UsersController < ApplicationController
     end
   end
 
+  # CSVファイルからユーザーを一括登録します
+  def import
+    if !params[:file].respond_to?(:path)
+      flash[:danger] = "CSVファイルを選択してください。"
+    else
+      imported_count, errors = User.import_csv(params[:file])
+      if errors.empty?
+        flash[:success] = "#{imported_count}件のユーザーを登録しました。"
+      else
+        flash[:danger] = "インポートできませんでした。<br>" + errors.map { |error| ERB::Util.html_escape(error) }.join("<br>")
+      end
+    end
+    redirect_to users_url
+  end
+
 
   def edit_basic_info
     @user = User.find(params[:id])
@@ -97,11 +123,9 @@ class UsersController < ApplicationController
   end
 
 
-
-
   def update_basic_info
     if @user.update(basic_info_params)
-      flash[:success] = "#{ERB::Util.html_escape(@user.name)}の基本情報を更新しました。"
+      flash[:success] = "#{ERB::Util.html_escape(@user.name)}のユーザー情報を更新しました。"
     else
       flash[:danger] = "#{ERB::Util.html_escape(@user.name)}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
     end
@@ -120,6 +144,14 @@ class UsersController < ApplicationController
               type: :csv
   end
 
+  # 管理者でも、ユーザー一覧からは自分自身を編集・削除できません
+  def reject_self
+    return unless current_user?(@user)
+
+    flash[:danger] = "自分自身は編集・削除できません。"
+    redirect_to users_url
+  end
+
   def viewable_user
     return if current_user?(@user) || current_user.admin?
     return if current_user.received_overtime_requests.exists?(user_id: @user.id)
@@ -135,7 +167,8 @@ class UsersController < ApplicationController
   end
 
   def basic_info_params
-    params.require(:user).permit(:department, :basic_time, :work_time,
-                                  :designated_work_start_time, :designated_work_end_time)
+    params.require(:user).permit(:name, :email, :department, :employee_number, :uid,
+                                 :password, :password_confirmation,
+                                 :basic_time, :designated_work_start_time, :designated_work_end_time)
   end
 end

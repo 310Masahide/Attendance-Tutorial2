@@ -1,0 +1,36 @@
+<% provide(:title, '拠点情報の修正') %>
+<h1>拠点情報の修正</h1>
+
+<div class="col-md-8 col-md-offset-2">
+  <p><%= link_to "拠点情報を追加", new_office_path, class: "btn btn-primary" %></p>
+
+  <% if @offices.empty? %>
+    <p class="text-center text-muted">拠点情報はありません。</p>
+  <% else %>
+    <table class="table table-bordered table-condensed" id="table-offices">
+      <thead>
+        <tr>
+          <th><%= Office.human_attribute_name :office_number %></th>
+          <th><%= Office.human_attribute_name :name %></th>
+          <th><%= Office.human_attribute_name :office_type %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @offices.each do |office| %>
+          <tr>
+            <td><%= office.office_number %></td>
+            <td><%= office.name %></td>
+            <td><%= office.office_type %></td>
+            <td>
+              <%= link_to "編集", edit_office_path(office), class: "btn btn-success btn-sm" %>
+              <%= link_to "削除", office_path(office),
+                    data: { turbo_method: :delete, turbo_confirm: "#{office.name}を削除してよろしいですか？" },
+                    class: "btn btn-danger btn-sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

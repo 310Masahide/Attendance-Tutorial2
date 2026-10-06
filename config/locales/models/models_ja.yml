@@ -2,6 +2,7 @@ ja:
   activerecord:
     models:
       user: ユーザー
+      office: 拠点
     attributes:
       user:
         id: ID
@@ -10,6 +11,8 @@ ja:
         department: 所属
         basic_time: 基本時間
         work_time: 勤務時間
+        employee_number: 社員番号
+        uid: カードID
         password: パスワード
         password_confirmation: パスワード再入力
         created_at: 作成日
@@ -20,3 +23,7 @@ ja:
           finished_at: 退勤時間
           note: 備考
           user: ユーザーID
+      office:
+        office_number: 拠点番号
+        name: 拠点名
+        office_type: 拠点種類

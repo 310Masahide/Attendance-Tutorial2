@@ -3,10 +3,10 @@ require 'rails_helper'
 
 RSpec.describe "Users", type: :request do
   describe 'GET index' do
-    let(:user) { create(:user) }
+    let(:user) { create(:user, admin: true) }
   
       context 'ユーザーが5件存在する場合' do
-        let!(:users) { create_list(:user, 4) + [user] }
+        let!(:users) { create_list(:user, 4) }
   
         before do
           post login_path, params: { session: { email: user.email, password: user.password } }
@@ -19,9 +19,9 @@ RSpec.describe "Users", type: :request do
       end
 
 
-      it "ユーザーが5件を返す" do
+      it "自分を除いた4件を返す" do
         json_response = JSON.parse(response.body)
-        expect(json_response.length).to eq(5)
+        expect(json_response.length).to eq(4)
       end
 
 
@@ -42,7 +42,9 @@ RSpec.describe "Users", type: :request do
             'basic_time' => user.basic_time.as_json,
             'work_time' => user.work_time.as_json,
             'designated_work_start_time' => user.designated_work_start_time.as_json,
-            'designated_work_end_time' => user.designated_work_end_time.as_json
+            'designated_work_end_time' => user.designated_work_end_time.as_json,
+            'employee_number' => user.employee_number,
+            'uid' => user.uid
           }
         end
         expect(json_response).to match_array(expected_users)
@@ -59,11 +61,33 @@ RSpec.describe "Users", type: :request do
           expect(json_response.length).to eq(30)
         end
   
-        it '2ページ目に5件のユーザーを返す' do
+        it '2ページ目に4件のユーザーを返す' do
           get users_path, params: { page: 2 }, as: :json
           json_response = JSON.parse(response.body)
-          expect(json_response.length).to eq(5)
+          expect(json_response.length).to eq(4)
         end
+      end
+    end
+
+    context 'ログイン中の自分について' do
+      before do
+        post login_path, params: { session: { email: user.email, password: user.password } }
+        get users_path, as: :json
+      end
+
+      it '一覧に含まれない' do
+        json_response = JSON.parse(response.body)
+        expect(json_response.map { |u| u['id'] }).not_to include(user.id)
+      end
+    end
+
+    context '管理者以外の場合' do
+      let(:general_user) { create(:user) }
+
+      it 'ユーザー一覧を見られない' do
+        post login_path, params: { session: { email: general_user.email, password: general_user.password } }
+        get users_path
+        expect(response).to redirect_to(root_url)
       end
     end
   end
@@ -98,7 +122,9 @@ RSpec.describe "Users", type: :request do
             'basic_time' => user.basic_time.as_json,
             'work_time' => user.work_time.as_json,
             'designated_work_start_time' => user.designated_work_start_time.as_json,
-            'designated_work_end_time' => user.designated_work_end_time.as_json
+            'designated_work_end_time' => user.designated_work_end_time.as_json,
+            'employee_number' => user.employee_number,
+            'uid' => user.uid
           }
         expect(json_response).to eq(expected_data)
       end
@@ -180,7 +206,9 @@ RSpec.describe "Users", type: :request do
         'name' => nil,
         'password_digest' => nil,
         'remember_digest' => nil,
-        'updated_at' => nil
+        'updated_at' => nil,
+        'employee_number' => nil,
+        'uid' => nil
       }
       expect(json_response).to eq(expected_data)
     end
@@ -327,6 +355,252 @@ RSpec.describe "Users", type: :request do
         delete user_path(target_user)
         expect(response).to redirect_to(users_url)
       end
+
+      it '自分自身は削除できない' do
+        expect {
+          delete user_path(admin_user)
+        }.not_to change(User, :count)
+        expect(flash[:danger]).to eq("自分自身は編集・削除できません。")
+      end
+
+      it '上長も削除できる' do
+        supervisor = create(:user, supervisor: true)
+        expect {
+          delete user_path(supervisor)
+        }.to change(User, :count).by(-1)
+      end
+    end
+  end
+
+  describe 'DELETE #destroy（管理者以外）' do
+    let(:user)        { create(:user) }
+    let(:target_user) { create(:user) }
+
+    before do
+      target_user
+      post login_path, params: { session: { email: user.email, password: user.password } }
+    end
+
+    it '他のユーザーを削除できない' do
+      expect { delete user_path(target_user) }.not_to change(User, :count)
+      expect(response).to redirect_to(root_url)
+    end
+  end
+
+  describe 'PATCH update_basic_info' do
+    let(:admin)  { create(:user, admin: true) }
+    let(:target) { create(:user) }
+    let(:turbo_stream_headers) { { "Accept" => "text/vnd.turbo-stream.html" } }
+    let(:user_params) do
+      { name: "変更後の名前", email: "changed@example.com", department: "総務部",
+        employee_number: "1001", uid: "CARD1001",
+        password: "newpass", password_confirmation: "newpass",
+        basic_time: "08:00", designated_work_start_time: "09:30", designated_work_end_time: "18:30" }
+    end
+
+    context "管理者の場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: admin.password } }
+      end
+
+      it "他のユーザーの9項目を変更できる" do
+        patch update_basic_info_user_path(target), params: { user: user_params }, headers: turbo_stream_headers
+        target.reload
+        expect(target.name).to eq "変更後の名前"
+        expect(target.email).to eq "changed@example.com"
+        expect(target.department).to eq "総務部"
+        expect(target.employee_number).to eq "1001"
+        expect(target.uid).to eq "CARD1001"
+        expect(target.authenticate("newpass")).to be_truthy
+        expect(target.basic_time.strftime("%H:%M")).to eq "08:00"
+        expect(target.designated_work_start_time.strftime("%H:%M")).to eq "09:30"
+        expect(target.designated_work_end_time.strftime("%H:%M")).to eq "18:30"
+      end
+
+      it "パスワードを空欄にすると、パスワードは変わらない" do
+        patch update_basic_info_user_path(target),
+              params: { user: user_params.merge(password: "", password_confirmation: "") }, headers: turbo_stream_headers
+        expect(target.reload.authenticate("password")).to be_truthy
+      end
+
+      it "社員番号とカードIDを空欄にすると、空(nil)で保存される" do
+        patch update_basic_info_user_path(target),
+              params: { user: user_params.merge(employee_number: "", uid: "") }, headers: turbo_stream_headers
+        expect(target.reload.employee_number).to be_nil
+        expect(target.uid).to be_nil
+      end
+
+      it "他のユーザーと同じ社員番号には変更できない" do
+        create(:user, employee_number: "1001")
+        patch update_basic_info_user_path(target), params: { user: user_params }, headers: turbo_stream_headers
+        expect(target.reload.employee_number).to be_nil
+      end
+
+      it "自分自身は編集できない" do
+        patch update_basic_info_user_path(admin), params: { user: user_params }, headers: turbo_stream_headers
+        expect(admin.reload.name).not_to eq "変更後の名前"
+      end
+    end
+
+    context "管理者以外の場合" do
+      let(:user) { create(:user) }
+
+      before do
+        post login_path, params: { session: { email: user.email, password: user.password } }
+      end
+
+      it "他のユーザーを編集できない" do
+        patch update_basic_info_user_path(target), params: { user: user_params }, headers: turbo_stream_headers
+        expect(response).to redirect_to(root_url)
+        expect(target.reload.name).not_to eq "変更後の名前"
+      end
+    end
+  end
+
+  describe 'POST import' do
+    let(:admin) { create(:user, admin: true) }
+    let(:header) do
+      "name,email,affiliation,employee_number,uid,basic_work_time," \
+        "designated_work_start_time,designated_work_end_time,superior,admin,password\n"
+    end
+
+    # テスト用のCSVファイルを作ります
+    def csv_file(body, encoding: "UTF-8")
+      file = Tempfile.new(["users", ".csv"])
+      file.binmode
+      file.write(body.encode(encoding))
+      file.rewind
+      Rack::Test::UploadedFile.new(file.path, "text/csv")
+    end
+
+    context "管理者の場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: admin.password } }
+      end
+
+      it "CSVのユーザーを一括登録できる" do
+        body = header +
+               "山田太郎,yamada@example.com,総務部,1001,A001,08:00,09:00,18:00,true,false,password\n" \
+               "鈴木花子,suzuki@example.com,営業部,1002,A002,07:30,10:00,19:00,false,false,password\n"
+
+        expect { post import_users_path, params: { file: csv_file(body) } }.to change(User, :count).by(2)
+        expect(flash[:success]).to eq "2件のユーザーを登録しました。"
+
+        yamada = User.find_by(email: "yamada@example.com")
+        expect(yamada.department).to eq "総務部"
+        expect(yamada.employee_number).to eq "1001"
+        expect(yamada.uid).to eq "A001"
+        expect(yamada.basic_time.strftime("%H:%M")).to eq "08:00"
+        expect(yamada.designated_work_start_time.strftime("%H:%M")).to eq "09:00"
+        expect(yamada.supervisor).to be true
+        expect(yamada.admin).to be false
+        expect(yamada.authenticate("password")).to be_truthy
+      end
+
+      it "Shift_JISのCSVも読み込める" do
+        body = header + "山田太郎,yamada@example.com,総務部,1001,A001,08:00,09:00,18:00,false,false,password\n"
+        expect {
+          post import_users_path, params: { file: csv_file(body, encoding: "Windows-31J") }
+        }.to change(User, :count).by(1)
+        expect(User.find_by(email: "yamada@example.com").name).to eq "山田太郎"
+      end
+
+      it "1行でもエラーがあれば、1件も登録しない" do
+        body = header +
+               "山田太郎,yamada@example.com,総務部,1001,A001,08:00,09:00,18:00,false,false,password\n" \
+               ",noname@example.com,営業部,1002,A002,08:00,09:00,18:00,false,false,password\n"
+
+        expect { post import_users_path, params: { file: csv_file(body) } }.not_to change(User, :count)
+        expect(flash[:danger]).to include "3行目"
+      end
+
+      it "ヘッダーが足りないと取り込まない" do
+        expect {
+          post import_users_path, params: { file: csv_file("name,email\n山田太郎,yamada@example.com\n") }
+        }.not_to change(User, :count)
+        expect(flash[:danger]).to include "ヘッダーが足りません"
+      end
+
+      it "ファイルを選ばずに送るとエラーメッセージを出す" do
+        post import_users_path
+        expect(flash[:danger]).to eq "CSVファイルを選択してください。"
+      end
+    end
+
+    context "管理者以外の場合" do
+      let(:user) { create(:user) }
+
+      before do
+        post login_path, params: { session: { email: user.email, password: user.password } }
+      end
+
+      it "インポートできない" do
+        body = header + "山田太郎,yamada@example.com,総務部,1001,A001,08:00,09:00,18:00,false,false,password\n"
+        expect { post import_users_path, params: { file: csv_file(body) } }.not_to change(User, :count)
+        expect(response).to redirect_to(root_url)
+      end
+    end
+  end
+
+  describe 'GET working' do
+    let(:admin) { create(:user, admin: true) }
+    let(:working_user)   { create(:user, name: "出勤中太郎") }
+    let(:finished_user)  { create(:user, name: "退社済花子") }
+    let(:yesterday_user) { create(:user, name: "昨日次郎") }
+
+    before do
+      today = Date.current
+      create(:attendance, user: working_user, worked_on: today,
+                          started_at: today.in_time_zone.change(hour: 9))
+      create(:attendance, user: finished_user, worked_on: today,
+                          started_at: today.in_time_zone.change(hour: 9),
+                          finished_at: today.in_time_zone.change(hour: 18))
+      create(:attendance, user: yesterday_user, worked_on: today - 1,
+                          started_at: (today - 1).in_time_zone.change(hour: 9))
+    end
+
+    it '管理者には、今日出社して、まだ退社していないユーザーだけを表示する' do
+      post login_path, params: { session: { email: admin.email, password: admin.password } }
+      get working_users_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include "出勤中太郎"
+      expect(response.body).not_to include "退社済花子"
+      expect(response.body).not_to include "昨日次郎"
+    end
+
+    it '管理者以外は見られない' do
+      post login_path, params: { session: { email: working_user.email, password: working_user.password } }
+      get working_users_path
+      expect(response).to redirect_to(root_url)
+    end
+  end
+
+  describe '管理者と勤怠画面' do
+    let(:admin) { create(:user, admin: true) }
+    let(:user)  { create(:user) }
+
+    before do
+      post login_path, params: { session: { email: admin.email, password: admin.password } }
+    end
+
+    it 'ログインするとユーザー一覧に移る' do
+      expect(response).to redirect_to(users_url)
+    end
+
+    it '他のユーザーの勤怠画面は表示できない' do
+      get user_path(user)
+      expect(response).to redirect_to(users_url)
+      expect(flash[:danger]).to eq "管理者は勤怠画面を利用できません。"
+    end
+
+    it '自分の勤怠画面も表示できない' do
+      get user_path(admin)
+      expect(response).to redirect_to(users_url)
+    end
+
+    it '勤怠のCSVも出力できない' do
+      get user_path(user, format: :csv)
+      expect(response).to redirect_to(users_url)
     end
   end
 end
