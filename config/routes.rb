@@ -10,7 +10,6 @@ Rails.application.routes.draw do
   resources :users do
     collection do
       post 'import'
-      get 'working'
     end
     member do
       get 'edit_basic_info'
@@ -30,10 +29,4 @@ Rails.application.routes.draw do
     resources :overtime_requests, only: [:new, :create, :edit, :update, :destroy]
     resources :monthly_approvals, only: [:create, :update]
   end
-
-  # 拠点情報(管理者のみ)
-  resources :offices, except: :show
-
-  # 基本情報(管理者のみ)
-  resource :system_setting, only: :edit
 end

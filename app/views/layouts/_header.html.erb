@@ -6,26 +6,14 @@
         <li><%= link_to "ホーム", root_path %></li>
         <% if logged_in? %>
           <% if current_user.admin? %>
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                管理者メニュー <b class="caret"></b>
-              </a>
-              <ul class="dropdown-menu">
-                <li><%= link_to "ユーザー一覧", users_path %></li>
-                <li><%= link_to "出勤社員一覧", working_users_path %></li>
-                <li><%= link_to "拠点情報の修正", offices_path %></li>
-                <li><%= link_to "基本情報の修正", edit_system_setting_path %></li>
-              </ul>
-            </li>
+            <li><%= link_to "ユーザー一覧", users_path %></li>
           <% end %>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
               メニュー <b class="caret"></b>
             </a>
             <ul class="dropdown-menu">
-              <% unless current_user.admin? %>
-                <li><%= link_to "勤怠", current_user %></li>
-              <% end %>
+              <li><%= link_to "勤怠", current_user %></li>
               <li><%= link_to "設定", edit_user_path(current_user) %></li>
               <li class="divider"></li>
               <li>

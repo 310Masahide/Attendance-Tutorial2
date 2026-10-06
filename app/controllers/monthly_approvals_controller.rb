@@ -2,7 +2,6 @@ class MonthlyApprovalsController < ApplicationController
   include AdminOrCorrectUserScoped
 
   before_action :logged_in_user
-  before_action :reject_admin
   before_action :set_user
   before_action :admin_or_correct_user
   before_action :set_monthly_approval, only: :update

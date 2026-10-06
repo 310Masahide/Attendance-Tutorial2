@@ -1,14 +1,12 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [:show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
   before_action :logged_in_user, only: [:index, :show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info,
-                                        :import, :working]
+                                        :import]
   before_action :correct_user, only: [:edit, :update]
-  before_action :admin_user, only: [:index, :destroy, :edit_basic_info, :update_basic_info, :import, :working]
+  before_action :admin_user, only: [:index, :destroy, :edit_basic_info, :update_basic_info, :import]
   before_action :reject_self, only: [:destroy, :edit_basic_info, :update_basic_info]
-  before_action :reject_admin, only: :show
   before_action :viewable_user, only: :show
   before_action :set_one_month, only: :show
-
 
   def index
     # ログイン中の自分は一覧に出さない
@@ -18,15 +16,6 @@ class UsersController < ApplicationController
       format.json { render json: @users }
     end
   end
-
-  # 出勤社員一覧: 今日出社して、まだ退社していないユーザー
-  def working
-    @working_attendances = Attendance.includes(:user)
-                                     .where(worked_on: Date.current, finished_at: nil)
-                                     .where.not(started_at: nil)
-                                     .order(:started_at)
-  end
-
 
   def show
     return send_attendances_csv if request.format.csv?

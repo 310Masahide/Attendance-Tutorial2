@@ -8,8 +8,7 @@ class SessionsController < ApplicationController
     if user && user.authenticate(params[:session][:password])
       log_in user
       params[:session][:remember_me] == '1' ? remember(user) : forget(user)
-      # 管理者は勤怠画面を使わないので、管理者画面(ユーザー一覧)へ移ります
-      redirect_back_or(user.admin? ? users_url : user)
+      redirect_back_or user
     else
       flash.now[:danger] = '認証に失敗しました。'
       render 'new', status: :unprocessable_entity
