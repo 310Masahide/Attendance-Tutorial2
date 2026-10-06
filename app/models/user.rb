@@ -23,7 +23,7 @@ class User < ApplicationRecord
                     format: { with: VALID_EMAIL_REGEX },
                     uniqueness: true
   validates :department, length: { in: 2..30 }, allow_blank: true
-    # 空欄は NULL として保存します(空文字 "" のままだと、2人目の空欄が unique インデックスに引っかかるため)
+  # 空欄は NULL として保存します(空文字 "" のままだと、2人目の空欄が unique インデックスに引っかかるため)
   normalizes :employee_number, :uid, with: ->(value) { value.strip.presence }
   validates :employee_number, length: { maximum: 20 }, uniqueness: true, allow_nil: true
   validates :uid, length: { maximum: 20 }, uniqueness: true, allow_nil: true
@@ -66,21 +66,25 @@ class User < ApplicationRecord
     User.supervisors.where.not(id: id)
   end
 
-    CSV_IMPORT_HEADERS = %w[name email affiliation employee_number uid basic_work_time
-                          designated_work_start_time designated_work_end_time superior admin password].freeze
+  CSV_IMPORT_HEADERS = %w[name email affiliation employee_number uid basic_work_time
+                       designated_work_start_time designated_work_end_time superior admin password].freeze
+  CSV_FIRST_DATA_LINE = 2 # 1行目はヘッダーなので、データは2行目から
+              
 
   # CSVファイルからユーザーを一括登録します。1行でもエラーがあれば、1件も登録しません
   # 戻り値: [登録した件数, エラーメッセージの配列]
   def self.import_csv(file)
-    rows = CSV.parse(read_csv_text(file), headers: true, skip_blanks: true)
-    missing_headers = CSV_IMPORT_HEADERS - rows.headers.compact.map(&:strip)
+    rows = CSV.parse(read_csv_text(file), headers: true, skip_blanks: true,
+                     header_converters: ->(header) { header&.strip })
+    missing_headers = CSV_IMPORT_HEADERS - rows.headers
     return [0, ["CSVのヘッダーが足りません（#{missing_headers.join('、')}）"]] if missing_headers.any?
+    return [0, ["登録するユーザーがありません。"]] if rows.empty?
 
     errors = []
     transaction do
-      rows.each.with_index(2) do |row, line|
+      rows.each.with_index(CSV_FIRST_DATA_LINE) do |row, line_number|
         user = new(csv_row_attributes(row))
-        errors << "#{line}行目: #{user.errors.full_messages.join('、')}" unless user.save
+        errors << "#{line_number}行目: #{user.errors.full_messages.join('、')}" unless user.save
       end
       raise ActiveRecord::Rollback if errors.any?
     end
@@ -109,13 +113,20 @@ class User < ApplicationRecord
       basic_time:                 row["basic_work_time"],
       designated_work_start_time: row["designated_work_start_time"],
       designated_work_end_time:   row["designated_work_end_time"],
-      supervisor:                 ActiveModel::Type::Boolean.new.cast(row["superior"]&.strip) || false,
-      admin:                      ActiveModel::Type::Boolean.new.cast(row["admin"]&.strip) || false,
+      supervisor:                 csv_boolean(row["superior"]),
+      admin:                      csv_boolean(row["admin"]),
       password:                   row["password"],
       password_confirmation:      row["password"]
     }.transform_values { |value| value.is_a?(String) ? value.strip.presence : value }.compact
   end
   private_class_method :csv_row_attributes
+
+  # CSVの true / false などの値を、真偽値に変換します(空欄は false)
+  def self.csv_boolean(value)
+    ActiveModel::Type::Boolean.new.cast(value&.strip) || false
+  end
+  private_class_method :csv_boolean
+
 
   private
 

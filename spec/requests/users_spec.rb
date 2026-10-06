@@ -525,6 +525,25 @@ RSpec.describe "Users", type: :request do
         post import_users_path
         expect(flash[:danger]).to eq "CSVファイルを選択してください。"
       end
+
+            it "エラーの行が多くても、表示は10件までにして500にならない" do
+        body = header + Array.new(100) { |i| ",noname#{i}@example.com,,,,,,,false,false,password\n" }.join
+        post import_users_path, params: { file: csv_file(body) }
+        expect(response).to redirect_to(users_url)
+        expect(flash[:danger]).to include "ほか90件のエラーがあります。"
+      end
+
+      it "ヘッダーの前後に空白があっても読み込める" do
+        spaced_header = header.split(",").map { |h| " #{h.strip} " }.join(",") + "\n"
+        body = spaced_header + "山田太郎,yamada@example.com,総務部,1001,A001,08:00,09:00,18:00,false,false,password\n"
+        expect { post import_users_path, params: { file: csv_file(body) } }.to change(User, :count).by(1)
+        expect(User.find_by(email: "yamada@example.com").name).to eq "山田太郎"
+      end
+
+      it "ヘッダーだけのCSVはエラーになる" do
+        expect { post import_users_path, params: { file: csv_file(header) } }.not_to change(User, :count)
+        expect(flash[:danger]).to include "登録するユーザーがありません。"
+      end
     end
 
     context "管理者以外の場合" do

@@ -86,21 +86,26 @@ class UsersController < ApplicationController
     end
   end
 
+  # CSVインポートの結果に表示するエラーの最大件数(多すぎると flash が Cookie に入りきらないため)
+  MAX_IMPORT_ERRORS_SHOWN = 10
+
   # CSVファイルからユーザーを一括登録します
   def import
-    if !params[:file].respond_to?(:path)
+    unless params[:file].respond_to?(:path)
       flash[:danger] = "CSVファイルを選択してください。"
+      return redirect_to users_url
+    end
+
+    imported_count, errors = User.import_csv(params[:file])
+    if errors.empty?
+      flash[:success] = "#{imported_count}件のユーザーを登録しました。"
     else
-      imported_count, errors = User.import_csv(params[:file])
-      if errors.empty?
-        flash[:success] = "#{imported_count}件のユーザーを登録しました。"
-      else
-        flash[:danger] = "インポートできませんでした。<br>" + errors.map { |error| ERB::Util.html_escape(error) }.join("<br>")
-      end
+      shown_errors = errors.first(MAX_IMPORT_ERRORS_SHOWN)
+      shown_errors << "ほか#{errors.size - shown_errors.size}件のエラーがあります。" if errors.size > shown_errors.size
+      flash[:danger] = "インポートできませんでした。<br>" + shown_errors.map { |error| ERB::Util.html_escape(error) }.join("<br>")
     end
     redirect_to users_url
   end
-
 
   def edit_basic_info
     @user = User.find(params[:id])
