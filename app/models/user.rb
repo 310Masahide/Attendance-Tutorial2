@@ -69,7 +69,7 @@ class User < ApplicationRecord
   CSV_IMPORT_HEADERS = %w[name email affiliation employee_number uid basic_work_time
                           designated_work_start_time designated_work_end_time superior admin password].freeze
   CSV_FIRST_DATA_LINE = 2 # 1行目はヘッダーなので、データは2行目から
-  
+
   # CSVファイルからユーザーを一括登録します。1行でもエラーがあれば、1件も登録しません
   # 戻り値: [登録した件数, エラーメッセージの配列]
   def self.import_csv(file)
