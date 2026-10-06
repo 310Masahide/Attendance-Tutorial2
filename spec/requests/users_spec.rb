@@ -526,10 +526,10 @@ RSpec.describe "Users", type: :request do
         expect(flash[:danger]).to eq "CSVファイルを選択してください。"
       end
 
-            it "エラーの行が多くても、表示は10件までにして500にならない" do
-        body = header + Array.new(100) { |i| ",noname#{i}@example.com,,,,,,,false,false,password\n" }.join
-        post import_users_path, params: { file: csv_file(body) }
-        expect(response).to redirect_to(users_url)
+      it "エラーの行が多くても、表示は10件までにして500にならない" do
+        long_error_row = ",not-an-email,A,#{'9' * 21},#{'C' * 21},,,,false,false,123\n"
+        post import_users_path, params: { file: csv_file(header + long_error_row * 100) }
+        expect(response).to have_http_status(:unprocessable_entity)
         expect(flash[:danger]).to include "ほか90件のエラーがあります。"
       end
 

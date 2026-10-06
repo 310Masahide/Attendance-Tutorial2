@@ -9,8 +9,8 @@ class UsersController < ApplicationController
   before_action :set_one_month, only: :show
 
   def index
-    # ログイン中の自分は一覧に出さない
-    @users = User.where.not(id: current_user.id).order(:id).paginate(page: params[:page])
+    @users = users_for_index
+
     respond_to do |format|
       format.html
       format.json { render json: @users }
@@ -86,7 +86,7 @@ class UsersController < ApplicationController
     end
   end
 
-  # CSVインポートの結果に表示するエラーの最大件数(多すぎると flash が Cookie に入りきらないため)
+  # CSVインポートの結果に表示するエラーの最大件数(多すぎると画面が長くなるため)
   MAX_IMPORT_ERRORS_SHOWN = 10
 
   # CSVファイルからユーザーを一括登録します
@@ -99,23 +99,26 @@ class UsersController < ApplicationController
     imported_count, errors = User.import_csv(params[:file])
     if errors.empty?
       flash[:success] = "#{imported_count}件のユーザーを登録しました。"
-    else
-      shown_errors = errors.first(MAX_IMPORT_ERRORS_SHOWN)
-      shown_errors << "ほか#{errors.size - shown_errors.size}件のエラーがあります。" if errors.size > shown_errors.size
-      flash[:danger] = "インポートできませんでした。<br>" + shown_errors.map { |error| ERB::Util.html_escape(error) }.join("<br>")
+      return redirect_to users_url
     end
-    redirect_to users_url
+
+    # エラーは件数も長さも決まらないので、Cookie を使う flash ではなく、
+    # その場で一覧を表示する flash.now で出します(CookieOverflow を防ぐため)
+    shown_errors = errors.first(MAX_IMPORT_ERRORS_SHOWN)
+    shown_errors << "ほか#{errors.size - shown_errors.size}件のエラーがあります。" if errors.size > shown_errors.size
+    flash.now[:danger] = "インポートできませんでした。<br>" + shown_errors.map { |error| ERB::Util.html_escape(error) }.join("<br>")
+    @users = users_for_index
+    render :index, status: :unprocessable_entity
   end
 
   def edit_basic_info
     @user = User.find(params[:id])
-  
+
     respond_to do |format|
       format.html { render partial: 'users/edit_basic_info', locals: { user: @user } } # 修正
       format.turbo_stream
     end
   end
-
 
   def update_basic_info
     if @user.update(basic_info_params)
@@ -131,6 +134,12 @@ class UsersController < ApplicationController
   end
 
   private
+
+  # ユーザー一覧に出すユーザー(ログイン中の自分は出さない)
+  def users_for_index
+    User.where.not(id: current_user.id).order(:id).paginate(page: params[:page])
+  end
+
 
   def send_attendances_csv
     send_data @attendances.to_csv,
