@@ -440,6 +440,14 @@ RSpec.describe "Users", type: :request do
         patch update_basic_info_user_path(admin), params: { user: user_params }, headers: turbo_stream_headers
         expect(admin.reload.name).not_to eq "変更後の名前"
       end
+
+      it "保存したメッセージは、その場で表示し、次の画面には残さない" do
+        patch update_basic_info_user_path(target), params: { user: user_params }, headers: turbo_stream_headers
+        expect(response.body).to include "変更後の名前のユーザー情報を更新しました。"
+
+        get users_path
+        expect(response.body).not_to include "ユーザー情報を更新しました。"
+      end
     end
 
     context "管理者以外の場合" do
@@ -543,6 +551,13 @@ RSpec.describe "Users", type: :request do
       it "ヘッダーだけのCSVはエラーになる" do
         expect { post import_users_path, params: { file: csv_file(header) } }.not_to change(User, :count)
         expect(flash[:danger]).to include "登録するユーザーがありません。"
+      end
+
+      it "エラーの後のページ送りのリンクは、一覧を指す" do
+        create_list(:user, 31)
+        post import_users_path, params: { file: csv_file(header + ",x,,,,,,,false,false,password\n") }
+        expect(response.body).to include 'href="/users?page=2"'
+        expect(response.body).not_to include "/users/import?page="
       end
     end
 

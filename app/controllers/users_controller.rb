@@ -122,14 +122,20 @@ class UsersController < ApplicationController
 
   def update_basic_info
     if @user.update(basic_info_params)
-      flash[:success] = "#{ERB::Util.html_escape(@user.name)}のユーザー情報を更新しました。"
+      message_type = :success
+      message = "#{ERB::Util.html_escape(@user.name)}のユーザー情報を更新しました。"
     else
-      flash[:danger] = "#{ERB::Util.html_escape(@user.name)}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
+      message_type = :danger
+      message = "#{ERB::Util.html_escape(@user.name)}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
     end
-  
+
     respond_to do |format|
-      format.html { redirect_to users_url }
-      format.turbo_stream
+      # リダイレクトする場合は次の画面へ渡す flash、その場で表示する場合は flash.now を使います
+      format.html do
+        flash[message_type] = message
+        redirect_to users_url
+      end
+      format.turbo_stream { flash.now[message_type] = message }
     end
   end
 

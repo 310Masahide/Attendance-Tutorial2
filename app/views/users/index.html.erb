@@ -17,9 +17,9 @@
     <% end %>
   </div>
 
-  <%= will_paginate %>
+  <%= will_paginate @users, params: { controller: "users", action: "index" } %>
   <div id="user-list">
     <%= render partial: 'users/user_row', collection: @users, as: :user %>
   </div>
-  <%= will_paginate %>
+  <%= will_paginate @users, params: { controller: "users", action: "index" } %>
 </div>
