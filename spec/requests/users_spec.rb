@@ -77,7 +77,7 @@ RSpec.describe "Users", type: :request do
 
       it '一覧に含まれない' do
         json_response = JSON.parse(response.body)
-        expect(json_response.map { |u| u['id'] }).not_to include(user.id)
+        expect(json_response.pluck('id')).not_to include(user.id)
       end
     end
 
@@ -536,7 +536,7 @@ RSpec.describe "Users", type: :request do
 
       it "エラーの行が多くても、表示は10件までにして500にならない" do
         long_error_row = ",not-an-email,A,#{'9' * 21},#{'C' * 21},,,,false,false,123\n"
-        post import_users_path, params: { file: csv_file(header + long_error_row * 100) }
+        post import_users_path, params: { file: csv_file(header + (long_error_row * 100)) }
         expect(response).to have_http_status(:unprocessable_entity)
         expect(flash[:danger]).to include "ほか90件のエラーがあります。"
       end
