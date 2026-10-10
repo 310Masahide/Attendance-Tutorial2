@@ -8,6 +8,9 @@ class UsersController < ApplicationController
   before_action :viewable_user, only: :show
   before_action :set_one_month, only: :show
 
+  # CSVインポートの結果に表示するエラーの最大件数(多すぎると画面が長くなるため)
+  MAX_IMPORT_ERRORS_SHOWN = 10
+
   def index
     @users = users_for_index
 
@@ -86,9 +89,6 @@ class UsersController < ApplicationController
     end
   end
 
-  # CSVインポートの結果に表示するエラーの最大件数(多すぎると画面が長くなるため)
-  MAX_IMPORT_ERRORS_SHOWN = 10
-
   # CSVファイルからユーザーを一括登録します
   def import
     unless params[:file].respond_to?(:path)
@@ -145,7 +145,6 @@ class UsersController < ApplicationController
   def users_for_index
     User.where.not(id: current_user.id).order(:id).paginate(page: params[:page])
   end
-
 
   def send_attendances_csv
     send_data @attendances.to_csv,
