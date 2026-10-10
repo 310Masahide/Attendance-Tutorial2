@@ -2,21 +2,24 @@
 <h1>ユーザー一覧</h1>
 
 <div class="col-md-10 col-md-offset-1">
-  <%= will_paginate %>
-  <table class="table table-condensed table-hover" id="table-users">
-    <thead>
-      <tr>
-        <th><%= User.human_attribute_name :name %></th>
-        <th class="center"><%= User.human_attribute_name :department %></th>
-        <% if current_user.admin? %>
-          <th class="center"><%= User.human_attribute_name :basic_time %></th>
-          <th class="center"><%= User.human_attribute_name :work_time %></th>
-        <% end %>
-        <th></th>
-      </tr>
-    </thead>
+  <div class="users-import">
+    <%= form_with url: import_users_path, data: { turbo: false, controller: "file-name" } do |f| %>
+      <div class="users-import-file">
+        <label class="btn btn-default users-import-select">
+          ファイルを選択
+          <%= f.file_field :file, accept: ".csv", class: "users-import-input",
+                data: { file_name_target: "input", action: "change->file-name#show" } %>
+        </label>
+        <input type="text" class="form-control users-import-name" readonly
+               data-file-name-target="name">
+      </div>
+      <%= f.submit "CSVをインポート", class: "btn btn-primary btn-block" %>
+    <% end %>
+  </div>
 
+  <%= will_paginate @users, params: { controller: "users", action: "index" } %>
+  <div id="user-list">
     <%= render partial: 'users/user_row', collection: @users, as: :user %>
-  </table>
-  <%= will_paginate %>
+  </div>
+  <%= will_paginate @users, params: { controller: "users", action: "index" } %>
 </div>

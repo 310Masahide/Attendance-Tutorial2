@@ -10,6 +10,8 @@ ja:
         department: 所属
         basic_time: 基本時間
         work_time: 勤務時間
+        employee_number: 社員番号
+        uid: カードID
         password: パスワード
         password_confirmation: パスワード再入力
         created_at: 作成日

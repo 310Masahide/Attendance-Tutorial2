@@ -1,7 +1,7 @@
 <% provide(:class_text, 'basic-info') %>
 <% provide(:button_text, '更新') %>
 
-<%= render layout: 'shared/modal', locals: { title: '基本情報編集' } do %>
+<%= render layout: 'shared/modal', locals: { title: 'ユーザー情報編集' } do %>
   <div class="row">
     <div class="col-md-6 col-md-offset-3">
       <%= form_with(model: @user, url: update_basic_info_user_path(@user), local: false, method: :patch,
@@ -9,16 +9,29 @@
         <%= render 'shared/error_messages', object: @user %>
 
         <%= f.label :name, class: "label-#{yield(:class_text)}" %>
-        <p><%= @user.name %></p>
+        <%= f.text_field :name, class: "form-control" %>
+
+        <%= f.label :email, class: "label-#{yield(:class_text)}" %>
+        <%= f.email_field :email, class: "form-control" %>
 
         <%= f.label :department, class: "label-#{yield(:class_text)}" %>
         <%= f.text_field :department, class: "form-control" %>
 
+        <%= f.label :employee_number, class: "label-#{yield(:class_text)}" %>
+        <%= f.text_field :employee_number, class: "form-control" %>
+
+        <%= f.label :uid, class: "label-#{yield(:class_text)}" %>
+        <%= f.text_field :uid, class: "form-control" %>
+
+        <%= f.label :password, class: "label-#{yield(:class_text)}" %>
+        <%= f.password_field :password, class: "form-control", autocomplete: "new-password",
+                             placeholder: "変更する場合のみ入力" %>
+
+        <%= f.label :password_confirmation, class: "label-#{yield(:class_text)}" %>
+        <%= f.password_field :password_confirmation, class: "form-control", autocomplete: "new-password" %>
+
         <%= f.label :basic_time, class: "label-#{yield(:class_text)}" %>
         <%= f.time_field :basic_time, class: "form-control" %>
-
-        <%= f.label :work_time, class: "label-#{yield(:class_text)}" %>
-        <%= f.time_field :work_time, class: "form-control" %>
 
         <%= f.label :designated_work_start_time, class: "label-#{yield(:class_text)}" %>
         <%= f.time_field :designated_work_start_time, class: "form-control" %>

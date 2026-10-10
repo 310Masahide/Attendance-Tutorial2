@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_01_050517) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_04_140634) do
   create_table "attendance_correction_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "user_id", null: false
@@ -82,7 +82,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_01_050517) do
     t.boolean "supervisor", default: false
     t.time "designated_work_start_time", default: "2000-01-01 00:00:00", null: false
     t.time "designated_work_end_time", default: "2000-01-01 09:00:00", null: false
+    t.string "employee_number"
+    t.string "uid"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["employee_number"], name: "index_users_on_employee_number", unique: true
+    t.index ["uid"], name: "index_users_on_uid", unique: true
   end
 
   add_foreign_key "attendance_correction_requests", "attendances"
