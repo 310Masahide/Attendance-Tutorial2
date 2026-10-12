@@ -575,4 +575,48 @@ RSpec.describe "Users", type: :request do
       end
     end
   end
+
+  describe 'GET working' do
+    let(:admin) { create(:user, admin: true) }
+    let(:working_user)   { create(:user, name: "出勤中太郎", employee_number: "1001") }
+    let(:finished_user)  { create(:user, name: "退社済花子") }
+    let(:yesterday_user) { create(:user, name: "昨日次郎") }
+
+    before do
+      today = Date.current
+      create(:attendance, user: working_user, worked_on: today,
+                          started_at: today.in_time_zone.change(hour: 9))
+      create(:attendance, user: finished_user, worked_on: today,
+                          started_at: today.in_time_zone.change(hour: 9),
+                          finished_at: today.in_time_zone.change(hour: 18))
+      create(:attendance, user: yesterday_user, worked_on: today - 1,
+                          started_at: (today - 1).in_time_zone.change(hour: 9))
+    end
+
+    context '管理者の場合' do
+      before do
+        post login_path, params: { session: { email: admin.email, password: admin.password } }
+        get working_users_path
+      end
+
+      it '見出しと、社員番号・名前の表を表示する' do
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("出勤中社員一覧", "社員番号", "名前")
+      end
+
+      it '本日出社して、まだ退社していないユーザーだけを表示する' do
+        expect(response.body).to include("出勤中太郎", "1001")
+        expect(response.body).not_to include("退社済花子")
+        expect(response.body).not_to include("昨日次郎")
+      end
+    end
+
+    context '管理者以外の場合' do
+      it '出勤中社員一覧を見られない' do
+        post login_path, params: { session: { email: working_user.email, password: working_user.password } }
+        get working_users_path
+        expect(response).to redirect_to(root_url)
+      end
+    end
+  end
 end

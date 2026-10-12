@@ -7,6 +7,9 @@ class Attendance < ApplicationRecord
   has_one  :latest_correction_request, -> { order(created_at: :desc) },
            class_name: "AttendanceCorrectionRequest"
 
+  # 出社中: 指定した日の出社時刻が保存されていて、退社時刻が保存されていない(nil)勤怠
+  scope :working_on, ->(date) { where(worked_on: date, finished_at: nil).where.not(started_at: nil) }
+
   NOTE_MAX_LENGTH = 50
 
   CSV_HEADERS = %w[日付 曜日 出社時間 退社時間 備考].freeze
