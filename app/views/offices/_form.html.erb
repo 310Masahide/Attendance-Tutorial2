@@ -1,0 +1,19 @@
+<%= form_with model: office do |f| %>
+  <%= render 'shared/error_messages', object: office %>
+
+  <%= f.label :office_number %>
+  <p class="form-control-static">
+    <%= office.persisted? ? office.office_number : "登録時に自動で採番されます" %>
+  </p>
+
+  <%= f.label :name %>
+  <%= f.text_field :name, class: "form-control" %>
+
+  <%= f.label :attendance_type %>
+  <%= f.select :attendance_type, Office::ATTENDANCE_TYPES, { include_blank: "選択してください" }, class: "form-control" %>
+
+  <div class="center">
+    <%= f.submit button_text, class: "btn btn-primary" %>
+    <%= link_to "戻る", offices_path, class: "btn btn-default" %>
+  </div>
+<% end %>

@@ -1,0 +1,40 @@
+<% provide(:title, '拠点一覧') %>
+<h1>拠点一覧</h1>
+
+<div class="col-md-12">
+  <table class="table table-bordered table-condensed" id="table-offices">
+    <thead>
+      <tr>
+        <th></th>
+        <th></th>
+        <th><%= Office.human_attribute_name :office_number %></th>
+        <th><%= Office.human_attribute_name :name %></th>
+        <th><%= Office.human_attribute_name :attendance_type %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if @offices.empty? %>
+        <tr>
+          <td colspan="5" class="text-muted">拠点情報はありません。</td>
+        </tr>
+      <% end %>
+      <% @offices.each do |office| %>
+        <tr>
+          <td><%= link_to "修正", edit_office_path(office), class: "btn btn-primary" %></td>
+          <td>
+            <%= link_to "削除", office_path(office),
+                  data: { turbo_method: :delete, turbo_confirm: "#{office.name}を削除してよろしいですか？" },
+                  class: "btn btn-primary" %>
+          </td>
+          <td><%= office.office_number %></td>
+          <td><%= office.name %></td>
+          <td><%= office.attendance_type %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="office-add-panel">
+    <%= link_to "拠点情報追加", new_office_path, class: "btn btn-primary btn-lg" %>
+  </div>
+</div>
