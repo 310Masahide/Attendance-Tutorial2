@@ -1,9 +1,9 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [:show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
   before_action :logged_in_user, only: [:index, :show, :edit, :update, :destroy, :edit_basic_info, :update_basic_info,
-                                        :import]
+                                        :import, :working]
   before_action :correct_user, only: [:edit, :update]
-  before_action :admin_user, only: [:index, :destroy, :edit_basic_info, :update_basic_info, :import]
+  before_action :admin_user, only: [:index, :destroy, :edit_basic_info, :update_basic_info, :import, :working]
   before_action :reject_self, only: [:destroy, :edit_basic_info, :update_basic_info]
   before_action :viewable_user, only: :show
   before_action :set_one_month, only: :show
@@ -18,6 +18,10 @@ class UsersController < ApplicationController
       format.html
       format.json { render json: @users }
     end
+  end
+
+  def working
+    @working_attendances = Attendance.working_on(Date.current).includes(:user).order(:user_id)
   end
 
   def show
