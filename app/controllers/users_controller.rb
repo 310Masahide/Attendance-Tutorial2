@@ -20,7 +20,6 @@ class UsersController < ApplicationController
     end
   end
 
-  # 出勤中社員一覧: 本日の出社時間が保存されていて、退社時間が保存されていないユーザー
   def working
     @working_attendances = Attendance.working_on(Date.current).includes(:user).order(:user_id)
   end
