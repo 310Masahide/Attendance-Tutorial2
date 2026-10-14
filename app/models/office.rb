@@ -3,8 +3,7 @@ class Office < ApplicationRecord
 
   before_validation :assign_office_number, on: :create
 
-  validates :office_number, presence: true, uniqueness: true,
-                            numericality: { only_integer: true, greater_than: 0 }
+  validates :office_number, presence: true, uniqueness: true
   validates :name, presence: true, uniqueness: true, length: { maximum: 50 }
   validates :attendance_type, presence: true, inclusion: { in: ATTENDANCE_TYPES, allow_blank: true }
 
