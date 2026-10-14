@@ -30,4 +30,7 @@ Rails.application.routes.draw do
     resources :overtime_requests, only: [:new, :create, :edit, :update, :destroy]
     resources :monthly_approvals, only: [:create, :update]
   end
+
+  # 拠点情報(管理者のみ)
+  resources :offices, except: :show
 end

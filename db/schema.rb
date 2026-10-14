@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_04_140634) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_13_104927) do
   create_table "attendance_correction_requests", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "user_id", null: false
@@ -50,6 +50,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_04_140634) do
     t.index ["approver_id"], name: "index_monthly_approvals_on_approver_id"
     t.index ["user_id", "month"], name: "index_monthly_approvals_on_user_id_and_month", unique: true
     t.index ["user_id"], name: "index_monthly_approvals_on_user_id"
+  end
+
+  create_table "offices", charset: "utf8mb4", force: :cascade do |t|
+    t.integer "office_number", null: false
+    t.string "name", null: false
+    t.string "attendance_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_offices_on_name", unique: true
+    t.index ["office_number"], name: "index_offices_on_office_number", unique: true
   end
 
   create_table "overtime_requests", charset: "utf8mb4", force: :cascade do |t|
