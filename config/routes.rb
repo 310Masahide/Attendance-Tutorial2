@@ -33,4 +33,7 @@ Rails.application.routes.draw do
 
   # 拠点情報(管理者のみ)
   resources :offices, except: :show
+
+  # 基本情報(管理者のみ)
+  resource :system_setting, only: :edit
 end
