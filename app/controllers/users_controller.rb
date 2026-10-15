@@ -71,8 +71,7 @@ class UsersController < ApplicationController
       respond_to do |format|
         if @user.update(user_params)
           flash[:success] = "ユーザー情報を更新しました。"
-          # 管理者は勤怠画面を使わないので、管理者画面(ユーザー一覧)へ戻します
-          format.html { redirect_to(@user.admin? ? users_url : @user) }
+          format.html { redirect_to home_url_for(@user) }
           format.json { render json: @user, status: :ok }
         else
           format.html { render :edit }

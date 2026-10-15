@@ -110,5 +110,11 @@ RSpec.describe User, type: :model do
         expect(user.valid?).to eq(true)
       end
     end
+
+    it '管理者と上長は兼任できない' do
+      user = build(:user, admin: true, supervisor: true)
+      expect(user).not_to be_valid
+      expect(user.errors.full_messages).to include '管理者と上長は兼任できません。'
+    end
   end
 end

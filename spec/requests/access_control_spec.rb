@@ -13,13 +13,17 @@ RSpec.describe "権限制御", type: :request do
   shared_examples "管理ユーザのページに遷移・変更できない" do
     it "管理ユーザのページを表示できない" do
       [users_path, working_users_path, offices_path, new_office_path,
-       edit_office_path(office), edit_system_setting_path].each do |path|
+       edit_office_path(office), edit_system_setting_path,
+       edit_basic_info_user_path(create(:user))].each do |path|
         get path
         expect(response).to redirect_to(root_url), "#{path} に遷移できてしまう"
       end
     end
 
     it "管理ユーザの操作で変更できない" do
+      post import_users_path
+      expect(response).to redirect_to(root_url)
+
       target = create(:user)
       expect { delete user_path(target) }.not_to change(User, :count)
       expect { post offices_path, params: { office: { name: "新拠点", attendance_type: "出勤" } } }.not_to change(Office, :count)

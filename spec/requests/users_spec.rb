@@ -559,6 +559,12 @@ RSpec.describe "Users", type: :request do
         expect(response.body).to include 'href="/users?page=2"'
         expect(response.body).not_to include "/users/import?page="
       end
+
+      it "管理者と上長を兼任する行はエラーになり、登録されない" do
+        body = header + "兼任太郎,kennin@example.com,総務部,1001,A001,08:00,09:00,18:00,true,true,password\n"
+        expect { post import_users_path, params: { file: csv_file(body) } }.not_to change(User, :count)
+        expect(flash[:danger]).to include "2行目: 管理者と上長は兼任できません。"
+      end
     end
 
     context "管理者以外の場合" do

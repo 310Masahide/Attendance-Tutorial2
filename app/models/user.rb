@@ -33,6 +33,7 @@ class User < ApplicationRecord
   validates :designated_work_end_time, presence: true
   has_secure_password
   validates :password, presence: true, length: { minimum: 6 }, allow_nil: true
+  validate :admin_and_supervisor_are_exclusive
 
   def User.digest(string)
     cost = 
@@ -128,6 +129,11 @@ class User < ApplicationRecord
   private_class_method :csv_boolean
 
   private
+
+  # 承認の入口は勤怠画面にしかなく、管理者は勤怠画面を使えないため、管理者と上長は兼任できません
+  def admin_and_supervisor_are_exclusive
+    errors.add(:base, "管理者と上長は兼任できません。") if admin? && supervisor?
+  end
 
   def set_default_times
     self.basic_time = Time.zone.now.change(hour: 8, min: 0, sec: 0)
