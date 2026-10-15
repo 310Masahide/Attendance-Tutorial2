@@ -2,7 +2,6 @@
 <%= form_with(model: @user, url: attendances_update_one_month_user_path(date: @first_day), local: true, method: :patch) do |f| %>
   <div>
     <h1>勤怠編集画面</h1>
-    <% shows_approver_column = !current_user.admin? %>
     <table class="table table-bordered table-condensed table-hover" id="table-attendances">
       <thead>
         <tr>
@@ -13,15 +12,13 @@
           <th>翌日</th>
           <th>在社時間</th>
           <th>備考</th>
-          <% if shows_approver_column %>
-            <th>指示者確認印</th>
-          <% end %>
+          <th>指示者確認印</th>
         </tr>
       </thead>
       <tbody>
         <% @attendances.each do |day| %>
           <%= f.fields_for "attendances[]", day do |attendance| %>
-            <% pending_request  = day.latest_correction_request if !current_user.admin? && day.latest_correction_request&.pending? %>
+            <% pending_request  = day.latest_correction_request if day.latest_correction_request&.pending? %>
             <% display_started  = pending_request ? pending_request.requested_started_at  : day.started_at %>
             <% display_finished = pending_request ? pending_request.requested_finished_at : day.finished_at %>
             <tr>
@@ -59,13 +56,11 @@
                 <% end %>
               </td>
               <td><%= attendance.text_field :note, value: (pending_request&.note || day.note), maxlength: Attendance::NOTE_MAX_LENGTH, class: "form-control" %></td>
-              <% if shows_approver_column %>
-                <td>
+              <td>
                 <%= select_tag "user[attendances][#{day.id}][approver_id]",
                       options_from_collection_for_select(@approvers, :id, :name, pending_request&.approver_id),
                       include_blank: "―", class: "form-control input-sm" %>
-                </td>
-              <% end %>
+              </td>
             </tr>
           <% end %>
         <% end %>

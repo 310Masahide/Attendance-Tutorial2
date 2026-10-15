@@ -5,6 +5,7 @@ class UsersController < ApplicationController
   before_action :correct_user, only: [:edit, :update]
   before_action :admin_user, only: [:index, :destroy, :edit_basic_info, :update_basic_info, :import, :working]
   before_action :reject_self, only: [:destroy, :edit_basic_info, :update_basic_info]
+  before_action :reject_admin, only: :show
   before_action :viewable_user, only: :show
   before_action :set_one_month, only: :show
 
@@ -70,7 +71,8 @@ class UsersController < ApplicationController
       respond_to do |format|
         if @user.update(user_params)
           flash[:success] = "ユーザー情報を更新しました。"
-          format.html { redirect_to @user }
+          # 管理者は勤怠画面を使わないので、管理者画面(ユーザー一覧)へ戻します
+          format.html { redirect_to(@user.admin? ? users_url : @user) }
           format.json { render json: @user, status: :ok }
         else
           format.html { render :edit }
@@ -165,7 +167,7 @@ class UsersController < ApplicationController
   end
 
   def viewable_user
-    return if current_user?(@user) || current_user.admin?
+    return if current_user?(@user)
     return if current_user.received_overtime_requests.exists?(user_id: @user.id)
     return if current_user.received_attendance_correction_requests.exists?(user_id: @user.id)
     return if current_user.received_monthly_approvals.exists?(user_id: @user.id)

@@ -4,7 +4,7 @@ module AdminOrCorrectUserScoped
   private
 
     def admin_or_correct_user
-      unless current_user?(@user) || current_user.admin?
+      unless current_user?(@user)
         flash[:danger] = "権限がありません。"
         redirect_to(root_url)
       end

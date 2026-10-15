@@ -2,6 +2,7 @@ class OvertimeRequestsController < ApplicationController
   include AdminOrCorrectUserScoped
 
   before_action :logged_in_user
+  before_action :reject_admin
   before_action :set_user
   before_action :admin_or_correct_user
   before_action :set_overtime_request, only: %i[edit update destroy]
