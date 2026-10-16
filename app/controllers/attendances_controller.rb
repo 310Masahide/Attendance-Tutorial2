@@ -1,9 +1,8 @@
 class AttendancesController < ApplicationController
-  include AdminOrCorrectUserScoped
-
   before_action :set_user, only: [:edit_one_month, :update_one_month, :correction_logs]
   before_action :logged_in_user, only: [:edit_one_month, :update_one_month, :correction_logs]
-  before_action :admin_or_correct_user, only: [:edit_one_month, :update_one_month, :correction_logs]
+  before_action :reject_admin, only: [:edit_one_month, :update_one_month, :correction_logs]
+  before_action :correct_user, only: [:edit_one_month, :update_one_month, :correction_logs]
   before_action :set_one_month, only: :edit_one_month
   before_action :set_approvers, only: :edit_one_month
 
@@ -11,30 +10,25 @@ class AttendancesController < ApplicationController
   end
 
   def update_one_month
-    if current_user.admin?
-      update_attendances_directly
-      flash[:success] = "1ヶ月分の勤怠情報を更新しました。"
-    else
-      applied_count, withdrawn_count, dates_without_approver, invalid_dates = request_attendance_corrections
-      messages = []
+    applied_count, withdrawn_count, dates_without_approver, invalid_dates = request_attendance_corrections
+    messages = []
 
-      if dates_without_approver.any?
-        dates = dates_without_approver.map { |date| I18n.l(date, format: :short) }.join("、")
-        messages << "#{dates} は指示者確認印(承認者)が未選択のため、申請できませんでした。承認者を選択してください。"
-      end
-
-      if invalid_dates.any?
-        dates = invalid_dates.map { |date| I18n.l(date, format: :short) }.join("、")
-        messages << "#{dates} は入力内容が無効なため、申請できませんでした。"
-      end
-
-      success_messages = []
-      success_messages << "#{applied_count}件の勤怠変更を申請しました。" if applied_count.positive?
-      success_messages << "#{withdrawn_count}件の勤怠変更申請を取り下げました。" if withdrawn_count.positive?
-      flash[:success] = success_messages.join if success_messages.any?
-      flash[:danger]  = messages.join if messages.any?
-      flash[:info]    = "変更内容がありませんでした。" if flash.empty?
+    if dates_without_approver.any?
+      dates = dates_without_approver.map { |date| I18n.l(date, format: :short) }.join("、")
+      messages << "#{dates} は指示者確認印(承認者)が未選択のため、申請できませんでした。承認者を選択してください。"
     end
+
+    if invalid_dates.any?
+      dates = invalid_dates.map { |date| I18n.l(date, format: :short) }.join("、")
+      messages << "#{dates} は入力内容が無効なため、申請できませんでした。"
+    end
+
+    success_messages = []
+    success_messages << "#{applied_count}件の勤怠変更を申請しました。" if applied_count.positive?
+    success_messages << "#{withdrawn_count}件の勤怠変更申請を取り下げました。" if withdrawn_count.positive?
+    flash[:success] = success_messages.join if success_messages.any?
+    flash[:danger]  = messages.join if messages.any?
+    flash[:info]    = "変更内容がありませんでした。" if flash.empty?
 
     redirect_to user_url(date: params[:date])
   rescue ActiveRecord::RecordInvalid, ArgumentError
@@ -56,24 +50,6 @@ class AttendancesController < ApplicationController
   end
 
   private
-
-  def update_attendances_directly
-    attendances = @user.attendances.includes(:correction_requests).where(id: attendances_params.keys).index_by { |attendance| attendance.id.to_s }
-
-    ActiveRecord::Base.transaction do
-      attendances_params.each do |id, item|
-        attendance = attendances[id]
-        next unless attendance
-
-        attendance.update!(build_attendance_attributes(attendance, item))
-        next unless attendance.saved_changes.except("updated_at").any?
-
-        # 管理者が直接内容を確定させたので、その日の保留中の申請は無効(却下)にする
-        # (.includesでまとめ取得済みのデータを使うため、awaiting_decisionスコープ(where)ではなくメモリ内でフィルタする)
-        attendance.correction_requests.select(&:pending?).each { |request| request.update!(status: :rejected) }
-      end
-    end
-  end
 
     # 一般ユーザーが勤怠変更を申請する経路
     def request_attendance_corrections

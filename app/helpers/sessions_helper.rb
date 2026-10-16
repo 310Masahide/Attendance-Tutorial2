@@ -55,6 +55,11 @@ module SessionsHelper
     session[:forwarding_url] = request.original_url if request.get?
   end
 
+  # そのユーザーの最初のページ(管理者はユーザー一覧、それ以外は勤怠画面)。ログイン後・設定保存後・管理者を勤怠画面から戻すときに使います
+  def home_url_for(user)
+    user.admin? ? users_url : user_url(user)
+  end
+
   # 記憶されたURL（があれば）にリダイレクトします。
   def redirect_back_or(default)
     redirect_to(session[:forwarding_url] || default)

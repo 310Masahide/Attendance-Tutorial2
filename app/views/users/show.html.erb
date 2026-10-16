@@ -38,7 +38,7 @@
     <%= link_to "勤怠を編集", attendances_edit_one_month_user_path(date: @first_day), class: "btn btn-primary" %>
     <%= link_to "CSVを出力", user_path(@user, date: @first_day, format: :csv),
           class: "btn btn-primary", data: { turbo: false } %>
-    <% if current_user?(@user) || current_user.admin? %>
+    <% if current_user?(@user) %>
       <div>
         <%= link_to "勤怠修正ログ（承認済）", attendances_correction_logs_user_path(@user),
               class: "btn btn-primary", data: { turbo_frame: 'modal' } %>
@@ -50,7 +50,7 @@
 <div>
   <table class="table table-bordered table-condensed table-hover" id="table-attendances">
 
-    <% shows_overtime_request_column = !current_user.admin? && !readonly %>
+    <% shows_overtime_request_column = !readonly %>
 
     <% result_columns   = 7 %><%# 出社2 + 退社2 + 在社時間 + 備考 + 指示者確認印 %>
     <% overtime_columns = 5 %><%# 終了予定2 + 時間外時間 + 業務処理内容 + 指示者確認印 %>
